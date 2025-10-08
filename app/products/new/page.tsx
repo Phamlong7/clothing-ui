@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createProduct } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import ImageUploader from "@/components/ImageUploader";
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -32,6 +33,10 @@ export default function CreateProductPage() {
       newErrors.price = "Valid price is required";
     }
     
+    if (formData.image && !/^https?:\/\/.+/.test(formData.image)) {
+      newErrors.image = "Paste a valid image URL";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,6 +68,13 @@ export default function CreateProductPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleImageChange = (url: string) => {
+    setFormData(prev => ({ ...prev, image: url }));
+    if (errors.image) {
+      setErrors(prev => ({ ...prev, image: "" }));
     }
   };
 
@@ -173,20 +185,36 @@ export default function CreateProductPage() {
                 )}
               </div>
 
-              {/* Image URL */}
-              <div className="space-y-2">
-                <label htmlFor="image" className="block text-white font-semibold text-lg">
-                  Image URL <span className="text-white/60 font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="url"
-                  id="image"
-                  name="image"
+              {/* Image Upload */}
+              <div className="space-y-3">
+                <ImageUploader
                   value={formData.image}
-                  onChange={handleChange}
-                  className="w-full px-6 py-4 bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400 transition-all text-lg"
-                  placeholder="https://example.com/image.jpg"
+                  onChange={handleImageChange}
+                  onClear={() => handleImageChange("")}
+                  helperText="Upload via Cloudinary or paste a direct URL below."
                 />
+                <div className="space-y-2">
+                  <label htmlFor="image" className="block text-white font-semibold text-lg">
+                    Image URL <span className="text-white/60 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    id="image"
+                    name="image"
+                    value={formData.image}
+                    onChange={handleChange}
+                    className="w-full px-6 py-4 bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400 transition-all text-lg"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  {errors.image && (
+                    <p className="text-red-300 text-sm mt-2 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.image}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Submit Error */}

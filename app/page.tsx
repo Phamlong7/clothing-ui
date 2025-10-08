@@ -4,10 +4,27 @@ import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
 import ProductCard from "@/components/ProductCard";
 import Loading from "@/components/Loading";
+import Pagination from "@/components/Pagination";
+import { getPriceLabel } from "@/lib/filters";
+import { DEFAULT_PAGE_SIZE, UI_TEXT } from "@/lib/constants";
 
-async function ProductGrid({ query }: { query: string }) {
-  const response = await listProducts(query);
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
+
+type ProductGridProps = {
+  query: string;
+  price: string;
+  page: number;
+};
+
+async function ProductGrid({ query, price, page }: ProductGridProps) {
+  const response = await listProducts({ q: query, page, limit: PAGE_SIZE, price });
   const products = Array.isArray(response) ? response : response.data || [];
+  const total = Array.isArray(response) ? products.length : response.total ?? products.length;
+  const currentPage = Array.isArray(response) ? 1 : response.page ?? page;
+  const pages = Array.isArray(response) ? 1 : response.pages ?? 1;
+  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to = total === 0 ? 0 : Math.min((currentPage - 1) * PAGE_SIZE + products.length, total);
+  const priceLabel = getPriceLabel(price);
 
   return (
     <>
@@ -17,15 +34,44 @@ async function ProductGrid({ query }: { query: string }) {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-slate-50">
+      <section className="py-16 px-4 bg-slate-50" id="all-products">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-bold text-slate-900">
-              All Products 
-              <span className="text-lg font-normal text-slate-600 ml-2">
-                ({products.length} items)
-              </span>
-            </h2>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-slate-900">
+                {UI_TEXT.products.listTitle}
+              </h2>
+              <p className="text-slate-600 mt-2">
+                {total > 0
+                  ? UI_TEXT.products.showingResults(from, to, total)
+                  : UI_TEXT.products.noProductsYet}
+              </p>
+            </div>
+
+            {(query || priceLabel) && (
+              <div className="flex flex-wrap items-center gap-2">
+                {query && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-purple-100 text-purple-700 px-4 py-2 text-sm font-semibold">
+                    <span>{UI_TEXT.products.searchLabel}</span>
+                    <span className="font-bold">&quot;{query}&quot;</span>
+                  </span>
+                )}
+                {priceLabel && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-pink-100 text-pink-700 px-4 py-2 text-sm font-semibold">
+                    <span>{UI_TEXT.products.priceLabel}</span>
+                    <span className="font-bold">{priceLabel}</span>
+                  </span>
+                )}
+                {(query || priceLabel) && (
+                  <a
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
+                    href="/"
+                  >
+                    {UI_TEXT.products.clearFilters}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           
           {products.length === 0 ? (
@@ -36,18 +82,21 @@ async function ProductGrid({ query }: { query: string }) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                {query ? `No products found for "${query}"` : "No products yet"}
+                {query ? UI_TEXT.products.noResultsFound(query) : UI_TEXT.products.noProductsYet}
               </h3>
               <p className="text-slate-600 mb-6">
-                {query ? "Try searching for something else" : "Start by adding some products to your store"}
+                {query ? UI_TEXT.products.noResultsMessage : UI_TEXT.products.noProductsMessage}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {products.map((product: Product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              <Pagination page={currentPage} pages={pages} />
+            </>
           )}
         </div>
       </section>
@@ -55,9 +104,11 @@ async function ProductGrid({ query }: { query: string }) {
   );
 }
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string; price?: string; page?: string }> }) {
   const sp = await searchParams;
   const query = sp?.q || "";
+  const price = sp?.price || "";
+  const page = Number(sp?.page) || 1;
   
   return (
     <>
@@ -65,11 +116,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <Suspense 
         fallback={
           <div className="py-16">
-            <Loading text="Loading products..." size="lg" />
+            <Loading text={UI_TEXT.loading.products} size="lg" />
           </div>
         }
       >
-        <ProductGrid query={query} />
+        <ProductGrid query={query} price={price} page={page} />
       </Suspense>
     </>
   );

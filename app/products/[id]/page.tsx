@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Suspense } from "react";
 import Image from "next/image";
-import { getProduct } from "@/lib/api";
+import { getProduct, Product } from "@/lib/api";
 import DeleteButton from "@/components/DeleteButton";
 import { notFound } from "next/navigation";
 import LinkButton from "@/components/LinkButton";
 import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
+import { UI_TEXT, IMAGE_EXTENSIONS } from "@/lib/constants";
 
 async function ProductContent({ id }: { id: string }) {
-  let p: any;
+  let p: Product;
   try { 
     p = await getProduct(id); 
   } catch { 
@@ -29,7 +29,7 @@ async function ProductContent({ id }: { id: string }) {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Home
+            {UI_TEXT.actions.back}
           </LinkButton>
         </div>
 
@@ -40,12 +40,12 @@ async function ProductContent({ id }: { id: string }) {
             <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 shadow-2xl">
               <div className="relative aspect-square bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-2xl overflow-hidden">
                 {(() => {
-                  const isValidImage = (url?: string) => {
+                  const isValidImage = (url?: string | null) => {
                     if (!url) return false;
                     try {
                       const u = new URL(url);
                       if (u.hostname.endsWith("google.com") && u.pathname.startsWith("/url")) return false;
-                      return /(\.avif|\.webp|\.png|\.jpe?g|\.gif|\.svg)$/i.test(u.pathname);
+                      return IMAGE_EXTENSIONS.test(u.pathname);
                     } catch {
                       return false;
                     }
@@ -90,7 +90,7 @@ async function ProductContent({ id }: { id: string }) {
 
                 {/* Price */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30">
-                  <div className="text-white/80 text-lg font-semibold mb-2">Price</div>
+                  <div className="text-white/80 text-lg font-semibold mb-2">{UI_TEXT.form.price.replace(' (USD)', '').replace(' *', '')}</div>
                   <div className="text-4xl font-black text-white">
                     ${Number(p.price).toFixed(2)}
                   </div>
@@ -98,7 +98,7 @@ async function ProductContent({ id }: { id: string }) {
 
                 {/* Description */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">Description</h3>
+                  <h3 className="text-xl font-bold text-white">{UI_TEXT.form.description}</h3>
                   <p className="text-slate-200 text-lg leading-relaxed">
                     {p.description}
                   </p>
@@ -111,7 +111,7 @@ async function ProductContent({ id }: { id: string }) {
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                      Edit Product
+                      {UI_TEXT.actions.edit}
                     </div>
                   </LinkButton>
                   
@@ -119,20 +119,6 @@ async function ProductContent({ id }: { id: string }) {
                     id={p.id} 
                     productName={p.name}
                   />
-                </div>
-
-                {/* Additional Info */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/30">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-white/60 text-sm font-semibold mb-1">Category</div>
-                      <div className="text-white font-bold">Fashion</div>
-                    </div>
-                    <div>
-                      <div className="text-white/60 text-sm font-semibold mb-1">Stock</div>
-                      <div className="text-green-400 font-bold">In Stock</div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

@@ -1,7 +1,17 @@
+"use client";
+
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { UI_TEXT } from "@/lib/constants";
 
 export default function Hero() {
+  const scrollToProducts = () => {
+    const productsSection = document.getElementById("all-products");
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-32 px-4 overflow-hidden">
       {/* Animated background elements */}
@@ -12,26 +22,31 @@ export default function Hero() {
       <div className="relative max-w-5xl mx-auto text-center text-white">
         <div className="mb-8">
           <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tight leading-none">
-            Premium 
+            {UI_TEXT.hero.title}
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 animate-gradient">
-              Fashion
+              {UI_TEXT.hero.subtitle}
             </span>
           </h1>
           <div className="w-24 h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto mb-8 rounded-full"></div>
         </div>
         
         <p className="text-xl md:text-2xl mb-12 text-slate-200 max-w-3xl mx-auto leading-relaxed font-light">
-          Discover the latest trends in premium clothing. Quality, style, and comfort in every piece.
+          {UI_TEXT.hero.description}
         </p>
         
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <Link href="/products/new">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 font-bold text-lg px-8 py-4 rounded-2xl shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-2 border-purple-500/20">
-              Add New Product
+              {UI_TEXT.hero.addProductButton}
             </Button>
           </Link>
-          <Button variant="ghost" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm font-semibold text-lg px-8 py-4 rounded-2xl transition-all duration-300 hover:border-white/50">
-            View Collection
+          <Button 
+            variant="ghost" 
+            size="lg" 
+            onClick={scrollToProducts}
+            className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm font-semibold text-lg px-8 py-4 rounded-2xl transition-all duration-300 hover:border-white/50"
+          >
+            {UI_TEXT.hero.viewCollectionButton}
           </Button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
+
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-16 px-4 relative overflow-hidden">
@@ -16,11 +18,11 @@ export default function Footer() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Clothing Shop
+                {APP_NAME}
               </h3>
             </div>
             <p className="text-slate-300 text-lg leading-relaxed max-w-md">
-              Discover premium fashion that defines your style. Quality craftsmanship meets modern design.
+              {APP_DESCRIPTION}
             </p>
             
             {/* Social Links */}
@@ -71,7 +73,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-slate-400 text-sm">
-            © {new Date().getFullYear()} Clothing Shop. All rights reserved.
+            © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">

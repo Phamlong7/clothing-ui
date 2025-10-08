@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import { APP_NAME, UI_TEXT } from "@/lib/constants";
 
 export default function Nav() {
   return (
@@ -12,14 +13,14 @@ export default function Nav() {
             </svg>
           </div>
           <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Clothing Shop
+            {APP_NAME}
           </span>
         </Link>
         
         <div className="flex items-center space-x-4">
           <Link href="/products/new">
             <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
-              Add Product
+              {UI_TEXT.nav.addProductButton}
             </Button>
           </Link>
         </div>

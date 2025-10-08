@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { startTransition, useCallback, useState } from "react";
-import { useToast } from "@/components/ToastProvider";
 
 type Props = {
   href: string;
@@ -15,18 +14,15 @@ type Props = {
 export default function LinkButton({ href, children, className = "", variant = "primary", size = "md" }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const { show } = useToast();
 
   const handleClick = useCallback(() => {
     if (pending) return;
     setPending(true);
-    show("Navigating…", "info");
     startTransition(() => {
       router.push(href);
-      // Keep disabled briefly to avoid double navigation.
       setTimeout(() => setPending(false), 800);
     });
-  }, [href, pending, router, show]);
+  }, [href, pending, router]);
 
   const base = "inline-flex items-center justify-center rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 ease-out";
   const sizes = {

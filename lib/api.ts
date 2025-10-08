@@ -30,11 +30,33 @@ export type ListResp = {
   pages: number;
 };
 
-export async function listProducts(q = "", page = 1, limit = 12): Promise<ListResp> {
+export type ListProductsParams = {
+  q?: string;
+  page?: number;
+  limit?: number;
+  price?: string;
+};
+
+function buildPriceFilters(range?: string) {
+  if (!range) return {};
+  const [min, max] = range.split("-");
+  return {
+    priceMin: min ? Number(min) : undefined,
+    priceMax: max ? Number(max) : undefined,
+  };
+}
+
+export async function listProducts(params: ListProductsParams = {}): Promise<ListResp> {
+  const { q = "", page = 1, limit = 12, price } = params;
+  const { priceMin, priceMax } = buildPriceFilters(price);
+
   const url = new URL(`${API}/api/Products`);
   if (q) url.searchParams.set("q", q);
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(limit));
+  if (typeof priceMin === "number") url.searchParams.set("priceMin", String(priceMin));
+  if (typeof priceMax === "number") url.searchParams.set("priceMax", String(priceMax));
+
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
