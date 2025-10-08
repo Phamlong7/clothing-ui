@@ -19,34 +19,19 @@ type ProductGridProps = {
 };
 
 async function ProductGrid({ query, price, page }: ProductGridProps) {
-  // Fetch from API (server-side filtering if backend supports it)
+  // Fetch from API with server-side pagination
   const response = await listProducts({ q: query, page, limit: PAGE_SIZE, price });
+  
+  // Handle both array and object response formats
   const apiProducts = Array.isArray(response) ? response : response.data || [];
-
-  // Client-side defensive filtering to ensure UX correctness even if backend ignores filters
-  const [minStr, maxStr] = price ? price.split("-") : ["", ""];
-  const min = minStr ? Number(minStr) : undefined;
-  const max = maxStr ? Number(maxStr) : undefined;
-  const normalizedQuery = (query || "").trim().toLowerCase();
-
-  const filteredProducts = apiProducts.filter((p: Product) => {
-    const matchesQuery = normalizedQuery
-      ? (p.name?.toLowerCase().includes(normalizedQuery) || p.description?.toLowerCase().includes(normalizedQuery))
-      : true;
-    const priceOk = typeof p.price === "number"
-      ? (min === undefined || p.price >= min) && (max === undefined || p.price <= max)
-      : true;
-    return matchesQuery && priceOk;
-  });
-
-  const total = filteredProducts.length;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, page), pages);
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const endIndex = startIndex + PAGE_SIZE;
-  const products = filteredProducts.slice(startIndex, endIndex);
-  const from = total === 0 ? 0 : startIndex + 1;
-  const to = total === 0 ? 0 : Math.min(endIndex, total);
+  const total = Array.isArray(response) ? response.length : response.total || apiProducts.length;
+  const pages = Array.isArray(response) ? 1 : Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Array.isArray(response) ? 1 : Math.min(Math.max(1, page), pages);
+  
+  // Use products directly from API (server-side pagination)
+  const products = apiProducts;
+  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to = total === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, total);
   const priceLabel = getPriceLabel(price);
 
   return (

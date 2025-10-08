@@ -12,9 +12,8 @@ export default function Pagination({ page, pages }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Show pagination if there are multiple pages OR if we want to show it for testing
+  // Show pagination only when there are multiple pages
   if (pages <= 1) {
-    // For testing: show pagination even with 1 page if there are products
     return null;
   }
 
