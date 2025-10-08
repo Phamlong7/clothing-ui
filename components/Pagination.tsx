@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 import clsx from "clsx";
 
 type PaginationProps = {
@@ -11,6 +12,8 @@ type PaginationProps = {
 export default function Pagination({ page, pages }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isPending, startTransition] = useTransition();
 
   // Show pagination only when there are multiple pages
   if (pages <= 1) {
@@ -30,8 +33,10 @@ export default function Pagination({ page, pages }: PaginationProps) {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    // Navigate without scrolling - let browser maintain scroll position
-    router.replace(newUrl, { scroll: false });
+    // Use startTransition to prevent layout shift and maintain scroll
+    startTransition(() => {
+      router.replace(newUrl, { scroll: false });
+    });
   };
 
   // Limit pagination buttons to avoid too many buttons

@@ -42,9 +42,15 @@ export type ListProductsParams = {
 function buildPriceFilters(range?: string) {
   if (!range) return {};
   const [min, max] = range.split("-");
+  
+  const priceMin = min && min.trim() ? Number(min) : undefined;
+  const priceMax = max && max.trim() ? Number(max) : undefined;
+  
+  console.log("💵 [API] buildPriceFilters:", { range, min, max, priceMin, priceMax });
+  
   return {
-    priceMin: min ? Number(min) : undefined,
-    priceMax: max ? Number(max) : undefined,
+    priceMin,
+    priceMax,
   };
 }
 
@@ -69,18 +75,24 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
   const { q = "", page = 1, limit = 12, price } = params;
   const { priceMin, priceMax } = buildPriceFilters(price);
 
+  console.log("🔍 [API] listProducts called with:", { q, page, limit, price, priceMin, priceMax });
+
   try {
     const url = buildProductsUrl(q, page, limit, priceMin, priceMax);
     if (!url) {
+      console.error("❌ [API] Failed to build URL");
       return { data: [], total: 0, page, pages: 1 };
     }
 
+    console.log("📡 [API] Fetching:", url.toString());
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    const result = await res.json();
+    console.log("✅ [API] Response:", { total: result.total, items: result.data?.length, pages: result.pages });
+    return result;
   } catch (err) {
     // Network or TLS errors: provide a safe fallback for UI
-    console.error("listProducts fetch failed:", err);
+    console.error("❌ [API] listProducts fetch failed:", err);
     return { data: [], total: 0, page, pages: 1 };
   }
 }

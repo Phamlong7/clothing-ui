@@ -19,6 +19,8 @@ type ProductGridProps = {
 };
 
 async function ProductGrid({ query, price, page }: ProductGridProps) {
+  console.log("📄 [ProductGrid] Rendering with:", { query, price, page });
+  
   // Fetch from API with server-side pagination
   const response = await listProducts({ q: query, page, limit: PAGE_SIZE, price });
   
@@ -27,6 +29,8 @@ async function ProductGrid({ query, price, page }: ProductGridProps) {
   const total = Array.isArray(response) ? response.length : response.total || apiProducts.length;
   const pages = Array.isArray(response) ? 1 : Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = Array.isArray(response) ? 1 : Math.min(Math.max(1, page), pages);
+  
+  console.log("📊 [ProductGrid] Results:", { total, pages, currentPage, productsCount: apiProducts.length });
   
   // Use products directly from API (server-side pagination)
   const products = apiProducts;

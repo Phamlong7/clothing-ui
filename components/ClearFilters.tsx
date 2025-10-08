@@ -1,10 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
 export default function ClearFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isPending, startTransition] = useTransition();
 
   const handleClear = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -13,8 +16,10 @@ export default function ClearFilters() {
     params.delete("page");
     const url = params.toString() ? `/?${params.toString()}` : "/";
 
-    // Navigate without scrolling - let browser maintain scroll position
-    router.replace(url, { scroll: false });
+    // Use startTransition to prevent layout shift and maintain scroll
+    startTransition(() => {
+      router.replace(url, { scroll: false });
+    });
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PRICE_RANGES } from "@/lib/filters";
 
@@ -9,6 +9,8 @@ export default function SearchBar() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [price, setPrice] = useState(searchParams.get("price") ?? "");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isPending, startTransition] = useTransition();
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -18,6 +20,8 @@ export default function SearchBar() {
 
   const performSearch = useCallback((searchQuery: string, searchPrice: string) => {
     const params = new URLSearchParams(searchParams.toString());
+    
+    console.log("🔄 [SearchBar] performSearch called:", { searchQuery, searchPrice });
     
     // Update params
     if (searchQuery.trim()) {
@@ -36,10 +40,13 @@ export default function SearchBar() {
     params.delete("page");
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+    console.log("🔀 [SearchBar] Navigating to:", newUrl);
     
-    // Navigate without scrolling - let browser maintain scroll position
-    router.replace(newUrl, { scroll: false });
-  }, [router, searchParams]);
+    // Use startTransition to prevent layout shift and maintain scroll
+    startTransition(() => {
+      router.replace(newUrl, { scroll: false });
+    });
+  }, [router, searchParams, startTransition]);
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
@@ -58,6 +65,7 @@ export default function SearchBar() {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPrice = e.target.value;
+    console.log("💰 [SearchBar] Price changed:", { from: price, to: newPrice });
     setPrice(newPrice);
     
     // Clear any pending search to avoid conflicts
