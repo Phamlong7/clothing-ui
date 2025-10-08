@@ -37,20 +37,20 @@ export default function SearchBar() {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const productsSection = document.getElementById("all-products");
-        if (productsSection) {
-          productsSection.scrollIntoView({ 
-            behavior: "smooth", 
-            block: "start",
-            inline: "nearest"
-          });
-        }
-      });
-    });
-    
+    // Navigate first, then scroll after DOM update
     router.replace(newUrl, { scroll: false });
+    
+    // Scroll after navigation is complete
+    setTimeout(() => {
+      const productsSection = document.getElementById("all-products");
+      if (productsSection) {
+        productsSection.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start",
+          inline: "nearest"
+        });
+      }
+    }, 100);
   }, [router, searchParams]);
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {

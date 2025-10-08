@@ -10,7 +10,7 @@ export const metadata = { title: "Clothing Shop" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en">
       <body suppressHydrationWarning className={`${inter.variable} antialiased app-bg`}>
         <ToastProvider>
           <Nav />

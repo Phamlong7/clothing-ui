@@ -13,11 +13,19 @@ export default function ClearFilters() {
     params.delete("page");
     const url = params.toString() ? `/?${params.toString()}` : "/";
 
-    requestAnimationFrame(() => {
-      const productsSection = document.getElementById("all-products");
-      if (productsSection) productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
     router.replace(url, { scroll: false });
+    
+    // Scroll after navigation is complete
+    setTimeout(() => {
+      const productsSection = document.getElementById("all-products");
+      if (productsSection) {
+        productsSection.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start",
+          inline: "nearest"
+        });
+      }
+    }, 100);
   };
 
   return (
