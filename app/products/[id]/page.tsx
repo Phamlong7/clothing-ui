@@ -50,7 +50,7 @@ async function ProductContent({ id }: { id: string }) {
                       return false;
                     }
                   };
-                  if (isValidImage(p.image)) {
+                  if (isValidImage(p.image) && p.image) {
                     return (
                       <Image
                         src={p.image}

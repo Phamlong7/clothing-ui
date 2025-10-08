@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { listProducts, Product } from "@/lib/api";
 import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
@@ -63,12 +64,12 @@ async function ProductGrid({ query, price, page }: ProductGridProps) {
                   </span>
                 )}
                 {(query || priceLabel) && (
-                  <a
+                  <Link
                     className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
                     href="/"
                   >
                     {UI_TEXT.products.clearFilters}
-                  </a>
+                  </Link>
                 )}
               </div>
             )}
