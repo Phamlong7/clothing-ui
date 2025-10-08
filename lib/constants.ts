@@ -3,7 +3,7 @@ export const APP_NAME = "Clothing Shop";
 export const APP_DESCRIPTION = "Discover the latest trends in premium clothing. Quality, style, and comfort in every piece.";
 
 // Pagination
-export const DEFAULT_PAGE_SIZE = 9;
+export const DEFAULT_PAGE_SIZE = 6; // 6 products per page
 export const DEFAULT_PAGE = 1;
 
 // Toast Configuration
