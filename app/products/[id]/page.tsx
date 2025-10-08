@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import LinkButton from "@/components/LinkButton";
 import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
 import { UI_TEXT, IMAGE_EXTENSIONS } from "@/lib/constants";
+import { formatPrice } from "@/lib/utils";
 
 async function ProductContent({ id }: { id: string }) {
   let p: Product;
@@ -92,7 +93,7 @@ async function ProductContent({ id }: { id: string }) {
                 <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30">
                   <div className="text-white/80 text-lg font-semibold mb-2">{UI_TEXT.form.price.replace(' (USD)', '').replace(' *', '')}</div>
                   <div className="text-4xl font-black text-white">
-                    ${Number(p.price).toFixed(2)}
+                    ${formatPrice(Number(p.price))}
                   </div>
                 </div>
 

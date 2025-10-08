@@ -21,7 +21,14 @@ export default function SearchBar() {
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
     if (price) params.set("price", price);
-    router.push(`/?${params.toString()}`);
+    
+    // Scroll to products section smoothly without full page reload
+    const productsSection = document.getElementById("all-products");
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: "smooth" });
+    }
+    
+    router.push(`/?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -49,7 +56,7 @@ export default function SearchBar() {
             id="priceRange"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-full sm:w-48 px-5 py-4 bg-white/70 backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base text-slate-700 focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl"
+            className="w-full sm:w-48 px-5 py-4 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base text-slate-900 font-medium focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300"
           >
             {PRICE_RANGES.map((range) => (
               <option key={range.value} value={range.value}>

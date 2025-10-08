@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/lib/api";
+import { formatPrice } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -31,7 +32,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           
           {/* Price tag with glassmorphism */}
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-lg rounded-2xl px-4 py-2 text-lg font-bold text-slate-900 shadow-lg border border-white/30">
-            ${Number(product.price).toFixed(2)}
+            ${formatPrice(Number(product.price))}
           </div>
           
           {/* Hover overlay */}
