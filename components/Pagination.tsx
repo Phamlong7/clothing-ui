@@ -30,20 +30,8 @@ export default function Pagination({ page, pages }: PaginationProps) {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    // Use router.replace with scroll: false to prevent full page reload
+    // Navigate without scrolling - let browser maintain scroll position
     router.replace(newUrl, { scroll: false });
-    
-    // Scroll to products section after navigation
-    setTimeout(() => {
-      const productsSection = document.getElementById("all-products");
-      if (productsSection) {
-        productsSection.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "start",
-          inline: "nearest"
-        });
-      }
-    }, 100);
   };
 
   // Limit pagination buttons to avoid too many buttons
