@@ -21,7 +21,18 @@ export default function Pagination({ page, pages }: PaginationProps) {
     } else {
       params.set("page", String(nextPage));
     }
-    router.push(`/?${params.toString()}`);
+    
+    const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+    
+    // Smooth scroll to products section
+    requestAnimationFrame(() => {
+      const productsSection = document.getElementById("all-products");
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+    
+    router.replace(newUrl, { scroll: false });
   };
 
   const items = Array.from({ length: pages }, (_, idx) => idx + 1);

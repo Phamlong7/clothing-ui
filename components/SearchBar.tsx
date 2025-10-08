@@ -37,12 +37,17 @@ export default function SearchBar() {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    // Smooth scroll to products section
     requestAnimationFrame(() => {
-      const productsSection = document.getElementById("all-products");
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      requestAnimationFrame(() => {
+        const productsSection = document.getElementById("all-products");
+        if (productsSection) {
+          productsSection.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start",
+            inline: "nearest"
+          });
+        }
+      });
     });
     
     router.replace(newUrl, { scroll: false });
@@ -52,21 +57,30 @@ export default function SearchBar() {
     const newQuery = e.target.value;
     setQuery(newQuery);
     
-    // Debounce search
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
     
+    // Shorter delay for better responsiveness
+    const delay = newQuery.length > 0 ? 300 : 100; // Faster for clearing
     debounceTimer.current = setTimeout(() => {
       performSearch(newQuery, price);
-    }, 500); // Wait 500ms after user stops typing
+    }, delay);
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPrice = e.target.value;
     setPrice(newPrice);
-    // Search immediately when price changes
-    performSearch(query, newPrice);
+    
+    // Clear any pending search to avoid conflicts
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    // Search immediately when price changes with smooth transition
+    requestAnimationFrame(() => {
+      performSearch(query, newPrice);
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,7 +89,11 @@ export default function SearchBar() {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    performSearch(query, price);
+    
+    // Immediate search with smooth transition
+    requestAnimationFrame(() => {
+      performSearch(query, price);
+    });
   };
 
   return (
@@ -83,15 +101,15 @@ export default function SearchBar() {
       <div className="flex flex-col md:flex-row gap-4 md:items-stretch">
         {/* Search Input */}
         <div className="relative flex-1 group">
-          <input
-            type="text"
-            value={query}
-            onChange={handleQueryChange}
-            placeholder="Search for clothing, brands, styles..."
-            aria-label="Search products"
-            style={{ color: '#0f172a' }}
-            className="w-full h-full pl-14 pr-6 py-5 text-lg font-semibold border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all bg-white backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300 placeholder:text-slate-400 placeholder:font-normal"
-          />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={handleQueryChange}
+                  placeholder="Search for clothing, brands, styles..."
+                  aria-label="Search products"
+                  style={{ color: '#0f172a' }}
+                  className="w-full h-full pl-14 pr-6 py-5 text-lg font-semibold border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all duration-300 bg-white backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300 placeholder:text-slate-400 placeholder:font-normal"
+                />
           <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-purple-500 transition-colors pointer-events-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -114,7 +132,7 @@ export default function SearchBar() {
               backgroundRepeat: 'no-repeat',
               backgroundSize: '1.25em 1.25em'
             }}
-            className="relative z-10 w-full h-full pl-12 pr-12 py-5 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300 appearance-none cursor-pointer"
+            className="relative z-10 w-full h-full pl-12 pr-12 py-5 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all duration-300 shadow-lg hover:shadow-xl hover:border-slate-300 appearance-none cursor-pointer"
           >
             {PRICE_RANGES.map((range) => (
               <option 
