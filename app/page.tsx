@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 // import Link from "next/link";
 import { listProducts, Product } from "@/lib/api";
+import { applyFilters, paginateItems } from "@/lib/client-filters";
 import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
 import ProductCard from "@/components/ProductCard";
@@ -21,21 +22,22 @@ type ProductGridProps = {
 async function ProductGrid({ query, price, page }: ProductGridProps) {
   console.log("📄 [ProductGrid] Rendering with:", { query, price, page });
   
-  // Fetch from API with server-side pagination
-  const response = await listProducts({ q: query, page, limit: PAGE_SIZE, price });
+  // Fetch ALL products from backend (no filters on backend)
+  const allProducts = await listProducts();
+  console.log("📦 [ProductGrid] Fetched from API:", allProducts.length);
   
-  // Handle both array and object response formats
-  const apiProducts = Array.isArray(response) ? response : response.data || [];
-  const total = Array.isArray(response) ? response.length : response.total || apiProducts.length;
-  const pages = Array.isArray(response) ? 1 : Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const currentPage = Array.isArray(response) ? 1 : Math.min(Math.max(1, page), pages);
+  // Apply client-side filtering (search + price)
+  const filteredProducts = applyFilters(allProducts, query, price);
   
-  console.log("📊 [ProductGrid] Results:", { total, pages, currentPage, productsCount: apiProducts.length });
+  // Apply client-side pagination
+  const { items: products, total, pages, page: currentPage, from, to } = paginateItems(
+    filteredProducts,
+    page,
+    PAGE_SIZE
+  );
   
-  // Use products directly from API (server-side pagination)
-  const products = apiProducts;
-  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const to = total === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, total);
+  console.log("📊 [ProductGrid] Final results:", { total, pages, currentPage, showing: products.length });
+  
   const priceLabel = getPriceLabel(price);
 
   return (

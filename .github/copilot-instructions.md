@@ -15,19 +15,22 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 ### API Integration (`lib/api.ts`)
 - **Base URL**: `process.env.NEXT_PUBLIC_API_BASE` (required)
 - **TLS bypass**: Development-only `ALLOW_INSECURE_TLS=true` for localhost HTTPS
-- **Error handling**: All API functions catch errors and return safe fallbacks (e.g., `{ data: [], total: 0, page: 1, pages: 1 }`)
-- **Price filtering**: Converts URL range `"50-100"` to `priceMin=50&priceMax=100` query params
+- **Error handling**: All API functions catch errors and return safe fallbacks (e.g., `[]` for listProducts)
+- **IMPORTANT**: Backend does NOT support filtering/search/pagination - only returns ALL products
+- **Client-side filtering**: All search, price filtering, and pagination done on frontend (see `lib/client-filters.ts`)
 - **Cache**: Use `{ cache: "no-store" }` for dynamic data
 
 ### State Management & URL Synchronization
 - **Search/filter state** lives in URL via `router.replace()` (no page reload)
+- **Client-side filtering**: All filtering happens on frontend after fetching ALL products from backend
+- **Filter logic**: See `lib/client-filters.ts` for `applyFilters()`, `searchProducts()`, `filterByPrice()`, `paginateItems()`
 - **Debouncing**: 300ms for text input, 100ms for clearing, immediate on price filter
 - **Scroll behavior**: Use `scroll: false` with `router.replace()` wrapped in `startTransition()` to maintain scroll position
 - **Scroll preservation**: Disabled automatic scroll restoration via `ScrollPreserver` component in layout
 - **Suspense boundaries**: Use stable `key` prop to prevent unnecessary remounting
-- **Pagination**: Page state in URL, resets to page 1 on search/filter changes
+- **Pagination**: Client-side pagination after filtering, page state in URL, resets to page 1 on search/filter changes
 - **Important**: Always wrap `router.replace()` in `startTransition()` to prevent layout shifts and scroll jumping
-- See `SearchBar.tsx`, `Pagination.tsx`, and `ScrollPreserver.tsx` for reference implementations
+- See `SearchBar.tsx`, `Pagination.tsx`, `ScrollPreserver.tsx`, and `lib/client-filters.ts` for reference implementations
 
 ## 🎨 Design System & Styling
 
@@ -48,11 +51,18 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 ### Search & Filtering
 - **Search bar** (`SearchBar.tsx`): Debounced input, price dropdown, hidden submit button for Enter key
 - **Price ranges** (`lib/filters.ts`): Pre-defined ranges (Under $50, $50-$100, etc.)
+- **Client-side logic** (`lib/client-filters.ts`): 
+  - `searchProducts()`: Case-insensitive search by name/description
+  - `filterByPrice()`: Filter by price range (e.g., "50-100", "200-" for $200+)
+  - `applyFilters()`: Combines search + price filtering
+  - `paginateItems()`: Client-side pagination after filtering
+- **Filter flow**: Fetch ALL products → Apply search → Apply price filter → Paginate results
 - **Filter badges**: Display active filters with "Clear filters" button (`ClearFilters.tsx`)
 - **Empty states**: Show different messages for "no products yet" vs. "no results found"
 
 ### Pagination
-- **Strategy**: Server-side pagination (API handles `page`/`limit`)
+- **Strategy**: Client-side pagination after filtering (backend returns ALL products)
+- **Logic**: `paginateItems()` in `lib/client-filters.ts` handles slicing filtered results
 - **UI**: Shows max 5 page buttons with ellipsis, always show first/last pages
 - **Visibility**: Hide pagination if `pages <= 1`
 - **Navigation**: Use `router.replace()` with `scroll: false` + manual smooth scroll
@@ -81,6 +91,7 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 ### Constants & Text
 - **Centralized UI text** in `lib/constants.ts` (use `UI_TEXT.*` instead of hardcoded strings)
 - **Config**: `DEFAULT_PAGE_SIZE = 6`, `TOAST_DURATION = 3000`, `IMAGE_EXTENSIONS` regex
+- **Client filtering**: `lib/client-filters.ts` contains all search, filter, and pagination logic
 
 ### TypeScript
 - **Strict mode** enabled
@@ -111,9 +122,11 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
    - Ensure `ScrollPreserver` component is in root layout
    - Use stable Suspense `key` to prevent remounting
    - Check CSS has `overflow-anchor: none` on body
-5. **Price filter "200+" not working**: Ensure empty string after split is handled (check `buildPriceFilters()`)
-6. **Image upload fails**: Check Cloudinary env vars, provide fallback URL input
-7. **Form validation**: Don't forget to validate image URLs (reject Google redirects, check extensions)
+5. **Filter not working**: Remember backend returns ALL products - filtering happens on FE via `lib/client-filters.ts`
+6. **Search case-sensitivity**: Use `.toLowerCase()` for case-insensitive matching
+7. **Price filter "200+" not working**: Ensure `max: null` is handled (no upper limit)
+8. **Image upload fails**: Check Cloudinary env vars, provide fallback URL input
+9. **Form validation**: Don't forget to validate image URLs (reject Google redirects, check extensions)
 
 ## 🔧 Development Commands
 
@@ -161,12 +174,13 @@ ALLOW_INSECURE_TLS=true
 
 ## 🎯 When Editing
 
-- **Search/filter logic**: Reference `SearchBar.tsx` for debounce + URL sync pattern
-- **API calls**: Always wrap in try-catch with fallback responses (see `lib/api.ts`)
+- **Search/filter logic**: Reference `lib/client-filters.ts` for filtering patterns
+- **API calls**: Backend only returns ALL products, no filtering - see `lib/api.ts`
 - **New pages**: Server component by default, add `"use client"` only if needed
 - **Styling**: Match existing glassmorphism patterns (check `ProductCard.tsx`, `app/products/[id]/page.tsx`)
 - **UI text**: Add to `lib/constants.ts` instead of hardcoding
 - **Forms**: Use same validation + loading patterns as `app/products/[id]/edit/page.tsx`
+- **Client-side filtering**: All search, price filtering, and pagination must be done on FE
 
 ## 🧪 Testing & Debugging
 
