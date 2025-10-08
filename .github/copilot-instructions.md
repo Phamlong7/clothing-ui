@@ -119,7 +119,7 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 3. **Navigation loops**: Use `router.replace()` instead of `router.push()` for filters to avoid history clutter
 4. **Page jumping on filter/pagination**: 
    - Always wrap `router.replace()` in `startTransition()` with `scroll: false`
-   - Ensure `ScrollPreserver` component is in root layout
+   - Ensure `ScrollPreserver` component is in root layout wrapped in Suspense
    - Use stable Suspense `key` to prevent remounting
    - Check CSS has `overflow-anchor: none` on body
 5. **Filter not working**: Remember backend returns ALL products - filtering happens on FE via `lib/client-filters.ts`
@@ -127,6 +127,7 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 7. **Price filter "200+" not working**: Ensure `max: null` is handled (no upper limit)
 8. **Image upload fails**: Check Cloudinary env vars, provide fallback URL input
 9. **Form validation**: Don't forget to validate image URLs (reject Google redirects, check extensions)
+10. **Build error with useSearchParams**: Always wrap components using `useSearchParams()` in Suspense (required for static page generation)
 
 ## 🔧 Development Commands
 
