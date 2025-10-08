@@ -32,7 +32,7 @@ export default function SearchBar() {
       params.delete("price");
     }
     
-    // Delete page param to reset to page 1
+    // Reset to page 1 when search/filter changes
     params.delete("page");
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
