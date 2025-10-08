@@ -18,6 +18,9 @@ export default function Pagination({ page, pages }: PaginationProps) {
   }
 
   const goToPage = (nextPage: number) => {
+    // Prevent unnecessary navigation if already on the same page
+    if (nextPage === page) return;
+    
     const params = new URLSearchParams(searchParams.toString());
     if (nextPage <= 1) {
       params.delete("page");
@@ -27,14 +30,21 @@ export default function Pagination({ page, pages }: PaginationProps) {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    // Smooth scroll to products section
+    // Optimized smooth scroll with double requestAnimationFrame
     requestAnimationFrame(() => {
-      const productsSection = document.getElementById("all-products");
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      requestAnimationFrame(() => {
+        const productsSection = document.getElementById("all-products");
+        if (productsSection) {
+          productsSection.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start",
+            inline: "nearest"
+          });
+        }
+      });
     });
     
+    // Use router.replace with scroll: false to prevent full page reload
     router.replace(newUrl, { scroll: false });
   };
 
@@ -53,7 +63,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
         type="button"
         onClick={() => goToPage(page - 1)}
         disabled={page === 1}
-        className="px-4 py-2 rounded-2xl border border-white/30 bg-white/10 text-sm font-semibold text-slate-100 hover:bg-white/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-2xl border-2 border-purple-400/50 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-sm font-bold text-white hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-500/20 disabled:hover:to-pink-500/20"
       >
         Previous
       </button>
@@ -64,7 +74,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
           <button
             type="button"
             onClick={() => goToPage(1)}
-            className="w-10 h-10 rounded-2xl font-semibold transition bg-white/15 text-white border border-white/20 hover:bg-white/25"
+            className="w-10 h-10 rounded-2xl font-bold transition-all duration-300 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-2 border-purple-400/50 hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/70"
           >
             1
           </button>
@@ -78,10 +88,10 @@ export default function Pagination({ page, pages }: PaginationProps) {
           type="button"
           onClick={() => goToPage(item)}
           className={clsx(
-            "w-10 h-10 rounded-2xl font-semibold transition",
+            "w-10 h-10 rounded-2xl font-bold transition-all duration-300",
             item === page
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-              : "bg-white/15 text-white border border-white/20 hover:bg-white/25"
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg border-2 border-purple-400/70"
+              : "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-2 border-purple-400/50 hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/70"
           )}
         >
           {item}
@@ -95,7 +105,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
           <button
             type="button"
             onClick={() => goToPage(pages)}
-            className="w-10 h-10 rounded-2xl font-semibold transition bg-white/15 text-white border border-white/20 hover:bg-white/25"
+            className="w-10 h-10 rounded-2xl font-bold transition-all duration-300 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-2 border-purple-400/50 hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/70"
           >
             {pages}
           </button>
@@ -106,7 +116,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
         type="button"
         onClick={() => goToPage(page + 1)}
         disabled={page === pages}
-        className="px-4 py-2 rounded-2xl border border-white/30 bg-white/10 text-sm font-semibold text-slate-100 hover:bg-white/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-2xl border-2 border-purple-400/50 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-sm font-bold text-white hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-500/20 disabled:hover:to-pink-500/20"
       >
         Next
       </button>

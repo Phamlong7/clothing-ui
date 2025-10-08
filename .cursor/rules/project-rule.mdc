@@ -1,0 +1,235 @@
+---
+alwaysApply: true
+---
+# Clothing Shop UI - Cursor Rules
+
+## 🎯 Project Overview
+This is a modern e-commerce clothing shop built with Next.js 15, TypeScript, and Tailwind CSS. The application features a complete product management system with search, filtering, pagination, and image upload capabilities.
+
+## 🏗️ Architecture & Tech Stack
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS with custom components
+- **State Management**: React hooks (useState, useEffect, useCallback)
+- **Navigation**: Next.js router with client-side navigation
+- **Image Upload**: Cloudinary integration
+- **API**: RESTful API integration with error handling
+
+## 📁 Project Structure
+```
+app/
+├── page.tsx                 # Homepage with product grid
+├── products/
+│   ├── [id]/page.tsx       # Product detail page
+│   ├── [id]/edit/page.tsx  # Edit product form
+│   └── new/page.tsx        # Create product form
+├── layout.tsx              # Root layout with Nav/Footer
+└── globals.css             # Global styles
+
+components/
+├── ui/                     # Reusable UI components
+├── SearchBar.tsx          # Search and filter functionality
+├── ProductCard.tsx        # Product display component
+├── Pagination.tsx         # Pagination controls
+├── ImageUploader.tsx      # Cloudinary image upload
+├── DeleteButton.tsx       # Product deletion with modal
+└── ToastProvider.tsx      # Toast notifications
+
+lib/
+├── api.ts                 # API client with error handling
+├── constants.ts           # Centralized UI text and config
+├── filters.ts             # Price range definitions
+└── utils.ts               # Utility functions
+```
+
+## 🎨 Design System
+- **Color Scheme**: Purple/pink gradients with glassmorphism effects
+- **Typography**: Inter font with semantic sizing
+- **Spacing**: Consistent 4px grid system
+- **Components**: Glassmorphism cards with backdrop-blur
+- **Animations**: Smooth transitions (300ms duration)
+- **Responsive**: Mobile-first approach
+
+## 🔧 Key Features & Patterns
+
+### Search & Filtering
+- **Debounced search**: 300ms delay for input, 100ms for clearing
+- **Auto-search**: Immediate search on price filter selection
+- **URL state management**: Search params sync with URL
+- **Smooth scrolling**: Auto-scroll to products section
+- **No page reloads**: Client-side navigation only
+
+### Pagination
+- **Server-side pagination**: API handles page/limit parameters
+- **Smart pagination**: Shows 5 page buttons max with ellipsis
+- **Previous/Next**: Always available navigation
+- **URL sync**: Page state in URL parameters
+
+### Image Handling
+- **Cloudinary integration**: Drag & drop upload with progress
+- **Fallback support**: Direct URL input when Cloudinary unavailable
+- **Image validation**: File type and size checking
+- **Responsive images**: Next.js Image optimization
+
+### Form Management
+- **Validation**: Client-side validation with error messages
+- **Loading states**: Disabled states during submission
+- **Error handling**: Toast notifications for feedback
+- **Auto-save**: Form state persistence
+
+## 🚀 Performance Optimizations
+- **Server Components**: Static generation where possible
+- **Client Components**: Only when interactivity needed
+- **Image optimization**: Next.js Image with proper sizing
+- **Code splitting**: Dynamic imports for heavy components
+- **Debouncing**: Search input optimization
+- **RequestAnimationFrame**: Smooth scroll timing
+
+## 🎯 UI/UX Principles
+- **Consistency**: All buttons, inputs, and cards follow same patterns
+- **Accessibility**: ARIA labels, keyboard navigation, focus states
+- **Responsive**: Mobile-first design with breakpoint considerations
+- **Loading states**: Skeleton components and spinners
+- **Error boundaries**: Graceful error handling
+- **Toast feedback**: User action confirmations
+
+## 🔍 Code Patterns
+
+### Component Structure
+```typescript
+// Client components with hooks
+"use client";
+import { useState, useEffect, useCallback } from "react";
+
+// Server components for data fetching
+async function ServerComponent() {
+  const data = await fetchData();
+  return <div>{data}</div>;
+}
+```
+
+### API Integration
+```typescript
+// Error handling with fallbacks
+try {
+  const response = await listProducts(params);
+  return response.data || [];
+} catch (error) {
+  console.error("API Error:", error);
+  return { data: [], total: 0, page: 1, pages: 1 };
+}
+```
+
+### State Management
+```typescript
+// URL state synchronization
+const [query, setQuery] = useState(searchParams.get("q") ?? "");
+const [price, setPrice] = useState(searchParams.get("price") ?? "");
+
+// Debounced search
+const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+```
+
+## 🎨 Styling Guidelines
+- **Glassmorphism**: `backdrop-blur-xl bg-white/10 border-white/20`
+- **Gradients**: `bg-gradient-to-r from-purple-600 to-pink-600`
+- **Shadows**: `shadow-lg hover:shadow-xl`
+- **Transitions**: `transition-all duration-300`
+- **Responsive**: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+
+## 🚨 Common Issues & Solutions
+- **Pagination not showing**: Check if `pages > 1`
+- **Search not working**: Verify debounce timing and URL params
+- **Image upload failing**: Check Cloudinary environment variables
+- **Form validation**: Ensure all required fields are validated
+- **Navigation issues**: Use `router.replace()` instead of `router.push()`
+
+## 📝 Development Notes
+- **Constants**: All UI text centralized in `lib/constants.ts`
+- **Type Safety**: Full TypeScript coverage with strict mode
+- **Error Boundaries**: Graceful error handling throughout
+- **Testing**: Manual testing with various data scenarios
+- **Performance**: Optimized for Core Web Vitals
+
+## 🔧 Environment Variables
+```env
+NEXT_PUBLIC_API_BASE=https://your-api-url.com
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-preset
+ALLOW_INSECURE_TLS=true  # Only for development
+```
+
+## 🎯 Future Enhancements
+- **Internationalization**: Multi-language support
+- **Advanced filtering**: Category, brand, size filters
+- **Wishlist**: User favorites functionality
+- **Reviews**: Product rating system
+- **Analytics**: User behavior tracking
+- **PWA**: Progressive Web App features
+
+## 🧪 Testing & Development Setup
+
+### Quick Start Commands
+```bash
+# Install dependencies
+npm install
+# or
+yarn install
+# or
+pnpm install
+
+# Start development server
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+```
+
+### Testing Framework Options
+```bash
+# Jest setup
+npx create-next-app@latest --example with-jest with-jest-app
+
+# Playwright setup
+npx create-next-app@latest --example with-playwright with-playwright-app
+
+# Cypress setup
+npx create-next-app@latest --example with-cypress with-cypress-app
+
+# Vitest setup
+npx create-next-app@latest --example with-vitest with-vitest-app
+```
+
+### Environment Configuration
+```bash
+# Copy environment template
+cp .env.local.example .env.local
+
+# Example .env.local content
+NEXT_PUBLIC_API_BASE=https://your-api-url.com
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-preset
+ALLOW_INSECURE_TLS=true  # Only for development
+```
+
+### Build & Production
+```bash
+# Build for production
+npm run build
+npm run start
+
+# or with other package managers
+yarn build && yarn start
+pnpm build && pnpm start
+```
+
+### Development Best Practices
+- **Hot Reload**: Use `npm run dev` for development with hot reloading
+- **Type Checking**: TypeScript strict mode enabled
+- **Linting**: ESLint configured for code quality
+- **Formatting**: Prettier for consistent code style
+- **Testing**: Manual testing with various data scenarios
+
+---
+*This project follows modern React/Next.js best practices with emphasis on performance, accessibility, and user experience.*
