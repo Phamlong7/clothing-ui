@@ -143,18 +143,21 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       
       <div className="relative z-10 container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-12">
+        {/* Floating Back Button aligned to top-left */}
+        <div className="absolute left-4 sm:left-6 top-6">
           <LinkButton 
             href={`/products/${resolvedParams.id}`}
             variant="ghost"
-            className="!bg-white/10 hover:!bg-white/20 !border-white/30 hover:!border-white/50 !text-white !font-semibold !px-6 !py-3 !rounded-2xl backdrop-blur-xl !shadow-lg hover:!shadow-xl !transition-all !duration-200"
+            className="!bg-white/10 hover:!bg-white/20 !border-white/30 hover:!border-white/50 !text-white !font-semibold !px-5 !py-2.5 !rounded-2xl backdrop-blur-xl !shadow-lg hover:!shadow-xl !transition-all !duration-200"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             {UI_TEXT.actions.backToProduct}
           </LinkButton>
+        </div>
+        {/* Header - add top padding so it doesn't overlap with the floating back button */}
+        <div className="pt-14 mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             Edit Product
           </h1>

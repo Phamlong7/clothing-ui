@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import { listProducts, Product } from "@/lib/api";
 import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import Pagination from "@/components/Pagination";
 import { getPriceLabel } from "@/lib/filters";
 import { DEFAULT_PAGE_SIZE, UI_TEXT } from "@/lib/constants";
+import ClearFilters from "@/components/ClearFilters";
 
 const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
@@ -18,13 +19,34 @@ type ProductGridProps = {
 };
 
 async function ProductGrid({ query, price, page }: ProductGridProps) {
+  // Fetch from API (server-side filtering if backend supports it)
   const response = await listProducts({ q: query, page, limit: PAGE_SIZE, price });
-  const products = Array.isArray(response) ? response : response.data || [];
-  const total = Array.isArray(response) ? products.length : response.total ?? products.length;
-  const currentPage = Array.isArray(response) ? 1 : response.page ?? page;
-  const pages = Array.isArray(response) ? 1 : response.pages ?? 1;
-  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const to = total === 0 ? 0 : Math.min((currentPage - 1) * PAGE_SIZE + products.length, total);
+  const apiProducts = Array.isArray(response) ? response : response.data || [];
+
+  // Client-side defensive filtering to ensure UX correctness even if backend ignores filters
+  const [minStr, maxStr] = price ? price.split("-") : ["", ""];
+  const min = minStr ? Number(minStr) : undefined;
+  const max = maxStr ? Number(maxStr) : undefined;
+  const normalizedQuery = (query || "").trim().toLowerCase();
+
+  const filteredProducts = apiProducts.filter((p: Product) => {
+    const matchesQuery = normalizedQuery
+      ? (p.name?.toLowerCase().includes(normalizedQuery) || p.description?.toLowerCase().includes(normalizedQuery))
+      : true;
+    const priceOk = typeof p.price === "number"
+      ? (min === undefined || p.price >= min) && (max === undefined || p.price <= max)
+      : true;
+    return matchesQuery && priceOk;
+  });
+
+  const total = filteredProducts.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, page), pages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const products = filteredProducts.slice(startIndex, endIndex);
+  const from = total === 0 ? 0 : startIndex + 1;
+  const to = total === 0 ? 0 : Math.min(endIndex, total);
   const priceLabel = getPriceLabel(price);
 
   return (
@@ -64,12 +86,9 @@ async function ProductGrid({ query, price, page }: ProductGridProps) {
                   </span>
                 )}
                 {(query || priceLabel) && (
-                  <Link
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
-                    href="/"
-                  >
-                    {UI_TEXT.products.clearFilters}
-                  </Link>
+                  // Client-side clear without full reload
+                  // Replaces existing Link to avoid default navigation scroll
+                  <ClearFilters />
                 )}
               </div>
             )}

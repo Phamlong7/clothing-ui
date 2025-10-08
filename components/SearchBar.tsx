@@ -1,34 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PRICE_RANGES } from "@/lib/filters";
-import { UI_TEXT } from "@/lib/constants";
 
 export default function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [price, setPrice] = useState(searchParams.get("price") ?? "");
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setQuery(searchParams.get("q") ?? "");
     setPrice(searchParams.get("price") ?? "");
   }, [searchParams]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const performSearch = useCallback((searchQuery: string, searchPrice: string) => {
     const params = new URLSearchParams(searchParams.toString());
     
     // Update params
-    if (query.trim()) {
-      params.set("q", query.trim());
+    if (searchQuery.trim()) {
+      params.set("q", searchQuery.trim());
     } else {
       params.delete("q");
     }
     
-    if (price) {
-      params.set("price", price);
+    if (searchPrice) {
+      params.set("price", searchPrice);
     } else {
       params.delete("price");
     }
@@ -38,7 +37,7 @@ export default function SearchBar() {
     
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
-    // Use replace to avoid adding to history and smooth scroll
+    // Smooth scroll to products section
     requestAnimationFrame(() => {
       const productsSection = document.getElementById("all-products");
       if (productsSection) {
@@ -47,51 +46,103 @@ export default function SearchBar() {
     });
     
     router.replace(newUrl, { scroll: false });
+  }, [router, searchParams]);
+
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    
+    // Debounce search
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      performSearch(newQuery, price);
+    }, 500); // Wait 500ms after user stops typing
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPrice = e.target.value;
+    setPrice(newPrice);
+    // Search immediately when price changes
+    performSearch(query, newPrice);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Clear debounce and search immediately on submit
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    performSearch(query, price);
   };
 
   return (
     <form onSubmit={handleSubmit} className="relative max-w-4xl mx-auto" role="search">
-      <div className="flex flex-col md:flex-row gap-4 md:items-center">
+      <div className="flex flex-col md:flex-row gap-4 md:items-stretch">
+        {/* Search Input */}
         <div className="relative flex-1 group">
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={UI_TEXT.search.placeholder}
+            onChange={handleQueryChange}
+            placeholder="Search for clothing, brands, styles..."
             aria-label="Search products"
-            className="w-full pl-14 pr-6 py-5 text-lg border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all bg-white/70 backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300/70 placeholder-slate-400"
+            style={{ color: '#0f172a' }}
+            className="w-full h-full pl-14 pr-6 py-5 text-lg font-semibold border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all bg-white backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300 placeholder:text-slate-400 placeholder:font-normal"
           />
-          <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-purple-500 transition-colors">
+          <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-purple-500 transition-colors pointer-events-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        {/* Price Filter Dropdown */}
+        <div className="relative w-full sm:w-56">
           <label className="sr-only" htmlFor="priceRange">Filter by price</label>
           <select
             id="priceRange"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            style={{ color: '#0f172a', fontWeight: '600' }}
-            className="w-full sm:w-48 px-5 py-4 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300 [&>option]:text-slate-900 [&>option]:font-semibold [&>option]:bg-white"
+            onChange={handlePriceChange}
+            style={{ 
+              color: '#0f172a', 
+              fontWeight: '600',
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a855f7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: 'right 1.25rem center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '1.25em 1.25em'
+            }}
+            className="relative z-10 w-full h-full pl-12 pr-12 py-5 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300 appearance-none cursor-pointer"
           >
             {PRICE_RANGES.map((range) => (
-              <option key={range.value} value={range.value} className="text-slate-900 font-semibold bg-white">
+              <option 
+                key={range.value} 
+                value={range.value}
+                style={{ 
+                  color: '#0f172a', 
+                  fontWeight: '600', 
+                  backgroundColor: '#ffffff',
+                  padding: '0.75rem'
+                }}
+              >
                 {range.label}
               </option>
             ))}
           </select>
-
-          <button
-            type="submit"
-            className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-3xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            {UI_TEXT.search.submitButton}
-          </button>
+          
+          {/* Leading icon for dropdown (placed under the select using z-index to avoid overlap) */}
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-purple-600 pointer-events-none z-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
         </div>
       </div>
+      
+      {/* Hidden submit for Enter key */}
+      <button type="submit" className="hidden" aria-label="Search" />
     </form>
   );
 }
