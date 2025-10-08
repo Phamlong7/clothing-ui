@@ -119,10 +119,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const price = sp?.price || "";
   const page = Number(sp?.page) || 1;
   
+  console.log("🏠 [HomePage] Received searchParams:", sp);
+  console.log("🏠 [HomePage] Parsed values:", { query, price, page });
+  
+  // Create stable key to prevent Suspense remounting
+  const stableKey = "product-grid";
+  
   return (
     <>
       <Hero />
       <Suspense 
+        key={stableKey}
         fallback={
           <div className="py-16">
             <Loading text={UI_TEXT.loading.products} size="lg" />

@@ -3,6 +3,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { Inter } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
+import ScrollPreserver from "@/components/ScrollPreserver";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body suppressHydrationWarning className={`${inter.variable} antialiased app-bg`}>
+        <ScrollPreserver />
         <ToastProvider>
           <Nav />
           <main className="min-h-screen">{children}</main>

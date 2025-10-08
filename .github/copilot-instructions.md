@@ -23,9 +23,11 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 - **Search/filter state** lives in URL via `router.replace()` (no page reload)
 - **Debouncing**: 300ms for text input, 100ms for clearing, immediate on price filter
 - **Scroll behavior**: Use `scroll: false` with `router.replace()` wrapped in `startTransition()` to maintain scroll position
+- **Scroll preservation**: Disabled automatic scroll restoration via `ScrollPreserver` component in layout
+- **Suspense boundaries**: Use stable `key` prop to prevent unnecessary remounting
 - **Pagination**: Page state in URL, resets to page 1 on search/filter changes
 - **Important**: Always wrap `router.replace()` in `startTransition()` to prevent layout shifts and scroll jumping
-- See `SearchBar.tsx` and `Pagination.tsx` for reference implementations
+- See `SearchBar.tsx`, `Pagination.tsx`, and `ScrollPreserver.tsx` for reference implementations
 
 ## 🎨 Design System & Styling
 
@@ -104,9 +106,14 @@ This Next.js 15 e-commerce app uses TypeScript, App Router, Tailwind CSS v4, and
 1. **Pagination not showing**: Ensure `pages > 1` check in `Pagination.tsx`
 2. **Search not triggering**: Verify debounce timer is cleared on submit/price change
 3. **Navigation loops**: Use `router.replace()` instead of `router.push()` for filters to avoid history clutter
-4. **Page jumping on filter/pagination**: Always wrap `router.replace()` in `startTransition()` with `scroll: false` to prevent scroll reset
-5. **Image upload fails**: Check Cloudinary env vars, provide fallback URL input
-6. **Form validation**: Don't forget to validate image URLs (reject Google redirects, check extensions)
+4. **Page jumping on filter/pagination**: 
+   - Always wrap `router.replace()` in `startTransition()` with `scroll: false`
+   - Ensure `ScrollPreserver` component is in root layout
+   - Use stable Suspense `key` to prevent remounting
+   - Check CSS has `overflow-anchor: none` on body
+5. **Price filter "200+" not working**: Ensure empty string after split is handled (check `buildPriceFilters()`)
+6. **Image upload fails**: Check Cloudinary env vars, provide fallback URL input
+7. **Form validation**: Don't forget to validate image URLs (reject Google redirects, check extensions)
 
 ## 🔧 Development Commands
 

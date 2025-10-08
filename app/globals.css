@@ -17,6 +17,14 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   scroll-behavior: smooth;
+  /* Prevent scroll jumping during navigation */
+  overflow-anchor: none;
+}
+
+html {
+  /* Disable automatic scroll restoration */
+  scroll-behavior: auto;
+  overflow-x: hidden;
 }
 
 /* Stable background class to prevent hydration mismatch from dynamic utility parsing */
