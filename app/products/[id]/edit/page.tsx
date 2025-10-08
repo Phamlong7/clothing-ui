@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import LinkButton from "@/components/LinkButton";
 import { useToast } from "@/components/ToastProvider";
 import ImageUploader from "@/components/ImageUploader";
+import { UI_TEXT } from "@/lib/constants";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -144,11 +145,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       <div className="relative z-10 container mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-12">
-          <LinkButton href={`/products/${resolvedParams.id}`} className="inline-flex items-center text-white/80 hover:text-white transition-colors mb-6 !min-h-0 !px-0">
+          <LinkButton 
+            href={`/products/${resolvedParams.id}`}
+            variant="ghost"
+            className="!bg-white/10 hover:!bg-white/20 !border-white/30 hover:!border-white/50 !text-white !font-semibold !px-6 !py-3 !rounded-2xl backdrop-blur-xl !shadow-lg hover:!shadow-xl !transition-all !duration-200"
+          >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Product
+            {UI_TEXT.actions.backToProduct}
           </LinkButton>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             Edit Product

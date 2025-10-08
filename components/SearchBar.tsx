@@ -18,17 +18,35 @@ export default function SearchBar() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (price) params.set("price", price);
+    const params = new URLSearchParams(searchParams.toString());
     
-    // Scroll to products section smoothly without full page reload
-    const productsSection = document.getElementById("all-products");
-    if (productsSection) {
-      productsSection.scrollIntoView({ behavior: "smooth" });
+    // Update params
+    if (query.trim()) {
+      params.set("q", query.trim());
+    } else {
+      params.delete("q");
     }
     
-    router.push(`/?${params.toString()}`, { scroll: false });
+    if (price) {
+      params.set("price", price);
+    } else {
+      params.delete("price");
+    }
+    
+    // Delete page param to reset to page 1
+    params.delete("page");
+    
+    const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+    
+    // Use replace to avoid adding to history and smooth scroll
+    requestAnimationFrame(() => {
+      const productsSection = document.getElementById("all-products");
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+    
+    router.replace(newUrl, { scroll: false });
   };
 
   return (
@@ -56,10 +74,11 @@ export default function SearchBar() {
             id="priceRange"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-full sm:w-48 px-5 py-4 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base text-slate-900 font-medium focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300"
+            style={{ color: '#0f172a', fontWeight: '600' }}
+            className="w-full sm:w-48 px-5 py-4 bg-white backdrop-blur-xl border-2 border-slate-200/50 rounded-3xl text-base focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all shadow-lg hover:shadow-xl hover:border-slate-300 [&>option]:text-slate-900 [&>option]:font-semibold [&>option]:bg-white"
           >
             {PRICE_RANGES.map((range) => (
-              <option key={range.value} value={range.value}>
+              <option key={range.value} value={range.value} className="text-slate-900 font-semibold bg-white">
                 {range.label}
               </option>
             ))}
