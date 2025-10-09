@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import clsx from "clsx";
-import { markScrollPositionForNextNavigation } from "@/lib/scroll";
+import { markScrollPositionForNextNavigation, markScrollTarget } from "@/lib/scroll";
 
 type PaginationProps = {
   page: number;
@@ -35,6 +35,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
     // Use startTransition to prevent layout shift and maintain scroll
+    markScrollTarget("all-products");
     markScrollPositionForNextNavigation(newUrl);
     startTransition(() => {
       router.replace(newUrl, { scroll: false });

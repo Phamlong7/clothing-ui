@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { markScrollPositionForNextNavigation } from "@/lib/scroll";
+import { markScrollPositionForNextNavigation, markScrollTarget } from "@/lib/scroll";
 
 export default function ClearFilters() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function ClearFilters() {
     }
 
     // Use startTransition to prevent layout shift and maintain scroll
+    markScrollTarget("all-products");
     markScrollPositionForNextNavigation(url);
     startTransition(() => {
       router.replace(url, { scroll: false });

@@ -1,8 +1,10 @@
 const PENDING_SCROLL_KEY = "scroll:pending";
 const ROUTE_SCROLL_PREFIX = "scroll:route:";
+const SCROLL_TARGET_KEY = "scroll:target";
 
 let inMemoryPendingScroll: number | null = null;
 const inMemoryRoutePositions = new Map<string, number>();
+let inMemoryScrollTarget: string | null = null;
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof sessionStorage !== "undefined";
@@ -51,6 +53,27 @@ export function markScrollPositionForNextNavigation(nextRouteKey?: string): void
   if (isBrowser()) {
     safeSetItem(PENDING_SCROLL_KEY, String(position));
   }
+}
+
+export function markScrollTarget(targetElementId: string): void {
+  if (!targetElementId) return;
+  inMemoryScrollTarget = targetElementId;
+  if (isBrowser()) {
+    safeSetItem(SCROLL_TARGET_KEY, targetElementId);
+  }
+}
+
+export function consumeScrollTarget(): string | null {
+  let value: string | null = null;
+  if (isBrowser()) {
+    value = safeGetItem(SCROLL_TARGET_KEY);
+    safeRemoveItem(SCROLL_TARGET_KEY);
+  }
+  if (value === null && inMemoryScrollTarget) {
+    value = inMemoryScrollTarget;
+  }
+  inMemoryScrollTarget = null;
+  return value;
 }
 
 export function consumePendingScrollPosition(): number | null {
