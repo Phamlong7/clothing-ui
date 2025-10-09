@@ -134,7 +134,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         key={stableKey}
         fallback={
           <div className="py-16">
-            <Loading text={UI_TEXT.loading.products} size="lg" />
+            <Loading text={UI_TEXT.loading.products} size="lg" fullScreen={false} />
           </div>
         }
       >
