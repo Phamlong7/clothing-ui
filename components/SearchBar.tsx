@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PRICE_RANGES } from "@/lib/filters";
-import { markScrollPositionForNextNavigation, markScrollTarget } from "@/lib/scroll";
+import { markScrollPositionForNextNavigation } from "@/lib/scroll";
 
 export default function SearchBar() {
   const router = useRouter();
@@ -46,8 +46,7 @@ export default function SearchBar() {
         return;
       }
 
-      // Use startTransition to prevent layout shift and maintain scroll
-       markScrollTarget("all-products");
+      // Preserve current scroll position across navigation
        markScrollPositionForNextNavigation(newUrl);
       startTransition(() => {
         router.replace(newUrl, { scroll: false });
