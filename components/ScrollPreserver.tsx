@@ -56,10 +56,11 @@ export default function ScrollPreserver() {
   }, [routeKey]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
     // Ensure we keep the latest scroll position when the page is refreshed
     const handleBeforeUnload = () => {
-      if (typeof window === "undefined") return;
-      markScrollPositionForNextNavigation();
+      markScrollPositionForNextNavigation(routeKey);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -67,7 +68,7 @@ export default function ScrollPreserver() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [routeKey]);
 
   return null;
 }

@@ -23,7 +23,7 @@ export default function ClearFilters() {
     }
 
     // Use startTransition to prevent layout shift and maintain scroll
-    markScrollPositionForNextNavigation();
+    markScrollPositionForNextNavigation(url);
     startTransition(() => {
       router.replace(url, { scroll: false });
     });

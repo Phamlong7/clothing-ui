@@ -39,10 +39,14 @@ function parseScroll(value: string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function markScrollPositionForNextNavigation(): void {
+export function markScrollPositionForNextNavigation(nextRouteKey?: string): void {
   if (typeof window === "undefined") return;
   const position = window.scrollY;
   inMemoryPendingScroll = position;
+
+  if (nextRouteKey) {
+    storeScrollPositionForRoute(nextRouteKey, position);
+  }
 
   if (isBrowser()) {
     safeSetItem(PENDING_SCROLL_KEY, String(position));

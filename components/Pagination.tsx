@@ -35,7 +35,7 @@ export default function Pagination({ page, pages }: PaginationProps) {
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     
     // Use startTransition to prevent layout shift and maintain scroll
-    markScrollPositionForNextNavigation();
+    markScrollPositionForNextNavigation(newUrl);
     startTransition(() => {
       router.replace(newUrl, { scroll: false });
     });

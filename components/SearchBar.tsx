@@ -47,7 +47,7 @@ export default function SearchBar() {
       }
 
       // Use startTransition to prevent layout shift and maintain scroll
-      markScrollPositionForNextNavigation();
+      markScrollPositionForNextNavigation(newUrl);
       startTransition(() => {
         router.replace(newUrl, { scroll: false });
       });
