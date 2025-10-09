@@ -80,10 +80,8 @@ export default function SearchBar() {
       clearTimeout(debounceTimer.current);
     }
     
-    // Search immediately when price changes with smooth transition
-    requestAnimationFrame(() => {
-      performSearch(query, newPrice);
-    });
+    // Search immediately when price changes
+    performSearch(query, newPrice);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
