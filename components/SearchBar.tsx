@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PRICE_RANGES } from "@/lib/filters";
+import { markScrollPositionForNextNavigation } from "@/lib/scroll";
 
 export default function SearchBar() {
   const router = useRouter();
@@ -18,35 +19,41 @@ export default function SearchBar() {
     setPrice(searchParams.get("price") ?? "");
   }, [searchParams]);
 
-  const performSearch = useCallback((searchQuery: string, searchPrice: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    console.log("🔄 [SearchBar] performSearch called:", { searchQuery, searchPrice });
-    
-    // Update params
-    if (searchQuery.trim()) {
-      params.set("q", searchQuery.trim());
-    } else {
-      params.delete("q");
-    }
-    
-    if (searchPrice) {
-      params.set("price", searchPrice);
-    } else {
-      params.delete("price");
-    }
-    
-    // Reset to page 1 when search/filter changes
-    params.delete("page");
-    
-    const newUrl = params.toString() ? `/?${params.toString()}` : "/";
-    console.log("🔀 [SearchBar] Navigating to:", newUrl);
-    
-    // Use startTransition to prevent layout shift and maintain scroll
-    startTransition(() => {
-      router.replace(newUrl, { scroll: false });
-    });
-  }, [router, searchParams, startTransition]);
+  const performSearch = useCallback(
+    (searchQuery: string, searchPrice: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      // Update params
+      if (searchQuery.trim()) {
+        params.set("q", searchQuery.trim());
+      } else {
+        params.delete("q");
+      }
+
+      if (searchPrice) {
+        params.set("price", searchPrice);
+      } else {
+        params.delete("price");
+      }
+
+      // Reset to page 1 when search/filter changes
+      params.delete("page");
+
+      const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+      const currentUrl = searchParams.toString() ? `/?${searchParams.toString()}` : "/";
+
+      if (newUrl === currentUrl) {
+        return;
+      }
+
+      // Use startTransition to prevent layout shift and maintain scroll
+      markScrollPositionForNextNavigation();
+      startTransition(() => {
+        router.replace(newUrl, { scroll: false });
+      });
+    },
+    [router, searchParams, startTransition]
+  );
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
@@ -65,7 +72,6 @@ export default function SearchBar() {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPrice = e.target.value;
-    console.log("💰 [SearchBar] Price changed:", { from: price, to: newPrice });
     setPrice(newPrice);
     
     // Clear any pending search to avoid conflicts
@@ -97,15 +103,15 @@ export default function SearchBar() {
       <div className="flex flex-col md:flex-row gap-4 md:items-stretch">
         {/* Search Input */}
         <div className="relative flex-1 group">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={handleQueryChange}
-                  placeholder="Search for clothing, brands, styles..."
-                  aria-label="Search products"
-                  style={{ color: '#0f172a' }}
-                  className="w-full h-full pl-14 pr-6 py-5 text-lg font-semibold border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all duration-300 bg-white backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300 placeholder:text-slate-400 placeholder:font-normal"
-                />
+          <input
+            type="text"
+            value={query}
+            onChange={handleQueryChange}
+            placeholder="Search for clothing, brands, styles..."
+            aria-label="Search products"
+            style={{ color: "#0f172a" }}
+            className="w-full h-full pl-14 pr-6 py-5 text-lg font-semibold border-2 border-slate-200/50 rounded-3xl focus:outline-none focus:border-purple-500 focus:ring-8 focus:ring-purple-500/10 transition-all duration-300 bg-white backdrop-blur-xl shadow-lg hover:shadow-xl group-hover:border-slate-300 placeholder:text-slate-400 placeholder:font-normal"
+          />
           <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-purple-500 transition-colors pointer-events-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
