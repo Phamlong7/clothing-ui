@@ -4,9 +4,30 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { APP_NAME, UI_TEXT } from "@/lib/constants";
 import { useAuth } from "@/components/AuthProvider";
+import { useEffect, useState, useCallback } from "react";
+import { getCart, listOrders } from "@/lib/api";
 
 export default function Nav() {
   const { isAuthenticated, logout } = useAuth();
+  const [cartCount, setCartCount] = useState<number>(0);
+  const [orderCount, setOrderCount] = useState<number>(0);
+
+  const refreshBadges = useCallback(async () => {
+    if (!isAuthenticated) {
+      setCartCount(0);
+      setOrderCount(0);
+      return;
+    }
+    try {
+      const [cart, orders] = await Promise.all([getCart().catch(() => null), listOrders().catch(() => [])]);
+      setCartCount(cart?.items?.length ?? 0);
+      setOrderCount(orders.length);
+    } catch {}
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    refreshBadges();
+  }, [refreshBadges]);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80">
@@ -25,15 +46,25 @@ export default function Nav() {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <>
-              <Link href="/cart">
-                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+              <Link href="/cart" className="relative">
+                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50 pr-3">
                   Cart
                 </Button>
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
-              <Link href="/orders">
-                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+              <Link href="/orders" className="relative">
+                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50 pr-3">
                   Orders
                 </Button>
+                {orderCount > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
+                    {orderCount}
+                  </span>
+                )}
               </Link>
               <Link href="/products/new">
                 <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200">

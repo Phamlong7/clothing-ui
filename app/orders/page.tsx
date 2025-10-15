@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { listOrders } from "@/lib/api";
+import { listOrders, payOrder } from "@/lib/api";
 import { Order } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const { show } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -34,6 +35,20 @@ export default function OrdersPage() {
       setIsLoading(false);
     }
   }, [isAuthenticated, loadOrders]);
+
+  const handlePayNow = async (orderId: string) => {
+    try {
+      setPayingId(orderId);
+      await payOrder(orderId);
+      show("Payment successful", "success");
+      await loadOrders();
+    } catch (e) {
+      console.error("Pay order failed", e);
+      show("Failed to process payment", "error");
+    } finally {
+      setPayingId(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -134,10 +149,12 @@ export default function OrdersPage() {
                     </Button>
                   </Link>
                   {order.status === "pending" && (
-                    <Button 
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold"
+                    <Button
+                      onClick={() => handlePayNow(order.id)}
+                      disabled={payingId === order.id}
+                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold disabled:opacity-60"
                     >
-                      Pay Now
+                      {payingId === order.id ? "Processing..." : "Pay Now"}
                     </Button>
                   )}
                 </div>
