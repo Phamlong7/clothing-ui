@@ -26,6 +26,10 @@ export default function AddToCartButton({ productId, className }: AddToCartButto
     try {
       await addToCart(productId, 1);
       show("Added to cart!", "success");
+      try {
+        // Notify any listeners (e.g., Nav) to refresh cart count
+        window.dispatchEvent(new CustomEvent("cart:updated"));
+      } catch {}
     } catch (error) {
       console.error("Failed to add to cart:", error);
       show("Failed to add to cart", "error");

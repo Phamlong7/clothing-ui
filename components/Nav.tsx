@@ -27,18 +27,21 @@ export default function Nav() {
 
   useEffect(() => {
     refreshBadges();
+    const onCartUpdated = () => refreshBadges();
+    window.addEventListener("cart:updated", onCartUpdated);
+    return () => window.removeEventListener("cart:updated", onCartUpdated);
   }, [refreshBadges]);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 w-full">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between rounded-3xl border border-white/20 bg-white/30 backdrop-blur-2xl shadow-[inset_0_0_40px_rgba(255,255,255,0.35)]">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-white/40">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </div>
-          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
             {APP_NAME}
           </span>
         </Link>
@@ -47,24 +50,20 @@ export default function Nav() {
           {isAuthenticated ? (
             <>
               <Link href="/cart" className="relative">
-                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50 pr-3">
+                <Button size="sm" variant="outline" className="border-white/40 text-slate-800 bg-white/40 hover:bg-white/60 pr-3 backdrop-blur">
                   Cart
                 </Button>
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
-                    {cartCount}
-                  </span>
-                )}
+                <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
+                  {cartCount}
+                </span>
               </Link>
               <Link href="/orders" className="relative">
-                <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50 pr-3">
+                <Button size="sm" variant="outline" className="border-white/40 text-slate-800 bg-white/40 hover:bg-white/60 pr-3 backdrop-blur">
                   Orders
                 </Button>
-                {orderCount > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
-                    {orderCount}
-                  </span>
-                )}
+                <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shadow">
+                  {orderCount}
+                </span>
               </Link>
               <Link href="/products/new">
                 <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
