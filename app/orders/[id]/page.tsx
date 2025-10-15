@@ -82,7 +82,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center p-4">
         <div className="text-center text-white">
           <h1 className="text-3xl font-bold mb-4">Order Not Found</h1>
-          <p className="text-white/70 mb-6">The order you're looking for doesn't exist.</p>
+          <p className="text-white/70 mb-6">{"The order you're looking for doesn't exist."}</p>
           <Link href="/orders">
             <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold">
               Back to Orders
