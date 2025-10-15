@@ -234,7 +234,12 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "payo
   return await handleResponse<CreateOrderResp>(res, correlationId);
 }
 
-export async function payOrder(id: string): Promise<Order> {
+export type PayOrderResp =
+  | Order
+  | { order: Order; payos: unknown }
+  | { order: Order; vnpay: { url: string } };
+
+export async function payOrder(id: string): Promise<PayOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST" });
-  return await handleResponse<Order>(res, correlationId);
+  return await handleResponse<PayOrderResp>(res, correlationId);
 }

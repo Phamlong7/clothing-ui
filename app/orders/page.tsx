@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { listOrders, payOrder } from "@/lib/api";
-import { Order } from "@/lib/api";
+import { listOrders, payOrder, Order } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
 import Link from "next/link";
@@ -39,7 +38,18 @@ export default function OrdersPage() {
   const handlePayNow = async (orderId: string) => {
     try {
       setPayingId(orderId);
-      await payOrder(orderId);
+      const result = await payOrder(orderId);
+      // Redirect if VNPAY returns a URL
+      const vnp = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
+        | { vnpay?: { url?: string } }
+        | undefined;
+      const payUrl = vnp?.vnpay?.url;
+      if (payUrl) {
+        show("Redirecting to VNPAY...", "success");
+        window.location.href = payUrl;
+        return;
+      }
+
       show("Payment successful", "success");
       await loadOrders();
     } catch (e) {
