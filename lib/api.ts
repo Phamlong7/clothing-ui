@@ -223,9 +223,10 @@ export async function getOrder(id: string): Promise<Order> {
 
 export type CreateOrderResp =
   | Order
-  | { order: Order; payos: unknown };
+  | { order: Order; payos: unknown }
+  | { order: Order; vnpay: { url: string } };
 
-export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" }): Promise<CreateOrderResp> {
+export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<CreateOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
     body: JSON.stringify(payload || {}),

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { createOrder } from "@/lib/api";
+import { createOrder, Order } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
@@ -11,7 +11,7 @@ export default function CheckoutPage() {
   const { isAuthenticated } = useAuth();
   const { show } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"simulate" | "payos">("simulate");
+  const [paymentMethod, setPaymentMethod] = useState<"simulate" | "payos" | "vnpay">("simulate");
 
   if (!isAuthenticated) {
     return (
@@ -37,11 +37,23 @@ export default function CheckoutPage() {
       if (paymentMethod === "simulate") {
         show("Order placed successfully! Payment simulated.", "success");
         window.location.href = "/checkout/success";
-      } else {
+      } else if (paymentMethod === "payos") {
         // Handle PayOS integration
         show("Redirecting to payment...", "success");
         // In a real app, you'd redirect to PayOS payment URL
         console.log("PayOS result:", result);
+      } else if (paymentMethod === "vnpay") {
+        // VNPAY returns a url inside result.vnpay.url per docs
+        const url = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
+          | { vnpay?: { url?: string } }
+          | undefined;
+        const paymentUrl = url?.vnpay?.url;
+        if (paymentUrl) {
+          show("Redirecting to VNPAY...", "success");
+          window.location.href = paymentUrl;
+        } else {
+          show("Failed to get VNPAY payment URL.", "error");
+        }
       }
     } catch (error) {
       console.error("Failed to place order:", error);
@@ -67,7 +79,7 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     value="simulate"
                     checked={paymentMethod === "simulate"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos")}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
                     className="w-4 h-4 text-purple-600"
                   />
                   <span className="text-white">Simulate Payment (Demo)</span>
@@ -78,10 +90,21 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     value="payos"
                     checked={paymentMethod === "payos"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos")}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
                     className="w-4 h-4 text-purple-600"
                   />
                   <span className="text-white">PayOS Payment</span>
+                </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="vnpay"
+                    checked={paymentMethod === "vnpay"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
+                    className="w-4 h-4 text-purple-600"
+                  />
+                  <span className="text-white">VNPAY Payment</span>
                 </label>
               </div>
             </div>
