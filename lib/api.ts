@@ -61,6 +61,7 @@ export type OrderItem = {
   productId: string;
   quantity: number;
   unitPrice: number;
+  product?: { id: string; name: string; image?: string | null; price: number };
 };
 export type Order = {
   id: string;
@@ -239,7 +240,13 @@ export type PayOrderResp =
   | { order: Order; payos: unknown }
   | { order: Order; vnpay: { url: string } };
 
-export async function payOrder(id: string): Promise<PayOrderResp> {
-  const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST" });
+export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<PayOrderResp> {
+  const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(payload || {}) });
   return await handleResponse<PayOrderResp>(res, correlationId);
+}
+
+// Per docs: POST /api/vnpay/create/{orderId} -> { url }
+export async function vnpayCreate(orderId: string): Promise<{ url: string }> {
+  const { res, correlationId } = await fetchJson(`${API}/api/vnpay/create/${orderId}`, { method: "POST" });
+  return await handleResponse<{ url: string }>(res, correlationId);
 }

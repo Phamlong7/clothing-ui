@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { listOrders, payOrder, Order } from "@/lib/api";
+import { listOrders, payOrder, Order, vnpayCreate } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
 import Link from "next/link";
@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<"simulate" | "payos" | "vnpay">("simulate");
 
   const loadOrders = useCallback(async () => {
     try {
@@ -38,7 +39,16 @@ export default function OrdersPage() {
   const handlePayNow = async (orderId: string) => {
     try {
       setPayingId(orderId);
-      const result = await payOrder(orderId);
+      // Prefer dedicated VNPAY endpoint when chosen
+      if (selectedMethod === "vnpay") {
+        const { url } = await vnpayCreate(orderId);
+        if (url) {
+          show("Redirecting to VNPAY...", "success");
+          window.location.href = url;
+          return;
+        }
+      }
+      const result = await payOrder(orderId, { paymentMethod: selectedMethod });
       // Redirect if VNPAY returns a URL
       const vnp = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
         | { vnpay?: { url?: string } }
@@ -50,7 +60,13 @@ export default function OrdersPage() {
         return;
       }
 
-      show("Payment successful", "success");
+      if (selectedMethod === "payos") {
+        show("Redirecting to PayPal (PayOS demo placeholder)...", "success");
+      } else if (selectedMethod === "simulate") {
+        show("Payment simulated successfully", "success");
+      } else {
+        show("Payment successful", "success");
+      }
       await loadOrders();
     } catch (e) {
       console.error("Pay order failed", e);
@@ -142,14 +158,20 @@ export default function OrdersPage() {
                   <div className="space-y-2">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex justify-between items-center text-white/80">
-                        <span>Product ID: {item.productId}</span>
+                        <span className="flex items-center gap-3">
+                          {item.product?.image && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.product.image} alt={item.product.name} className="w-10 h-10 rounded-lg object-cover" />
+                          )}
+                          <span>{item.product?.name ?? item.productId}</span>
+                        </span>
                         <span>Qty: {item.quantity} × ${formatPrice(item.unitPrice)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-3">
                   <Link href={`/orders/${order.id}`}>
                     <Button 
                       variant="outline" 
@@ -158,13 +180,28 @@ export default function OrdersPage() {
                       View Details
                     </Button>
                   </Link>
-                  {order.status === "pending" && (
-                    <Button
-                      onClick={() => handlePayNow(order.id)}
-                      disabled={payingId === order.id}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold disabled:opacity-60"
-                    >
-                      {payingId === order.id ? "Processing..." : "Pay Now"}
+                  {order.status === "pending" ? (
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={selectedMethod}
+                        onChange={(e) => setSelectedMethod(e.target.value as typeof selectedMethod)}
+                        className="px-3 py-2 rounded-xl bg-white/10 border border-white/30 text-white text-sm focus:outline-none"
+                      >
+                        <option value="simulate" className="text-slate-900">Demo (Simulate)</option>
+                        <option value="vnpay" className="text-slate-900">VNPAY</option>
+                        <option value="payos" className="text-slate-900">PayPal (PayOS demo)</option>
+                      </select>
+                      <Button
+                        onClick={() => handlePayNow(order.id)}
+                        disabled={payingId === order.id}
+                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold disabled:opacity-60"
+                      >
+                        {payingId === order.id ? "Processing..." : "Pay Now"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button disabled variant="outline" className="border-white/30 text-white/60">
+                      {order.status.toUpperCase()}
                     </Button>
                   )}
                 </div>
