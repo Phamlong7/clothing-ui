@@ -89,6 +89,7 @@ Header: `Authorization: Bearer <token>`
   - Body:
     - simulate: `{ }` or `{ "paymentMethod": "simulate" }` → creates order and returns it
     - PayOS: `{ "paymentMethod": "payos" }` → returns `{ order, payos }` with PayOS payload (e.g., payment link)
+    - VNPAY: `{ "paymentMethod": "vnpay" }` → returns `{ order, vnpay: { url } }` payment URL
   - Responses: `201 Created`
 
 - POST `/api/orders/{id}/pay` (simulate)
@@ -115,6 +116,10 @@ OrderItem {
 ```
 
 ## PayOS Webhook
+
+## VNPAY
+- POST `/api/vnpay/create/{orderId}` → trả `url` thanh toán cho đơn hàng
+- GET `/api/vnpay/return` → endpoint return/callback; hệ thống xác thực chữ ký và cập nhật order `status = "paid"` khi `vnp_TransactionStatus == "00"`
 
 - POST `/api/payos/webhook`
   - Used by PayOS to confirm payment
