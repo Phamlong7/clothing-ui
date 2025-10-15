@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 // import Link from "next/link";
 import { listProducts, Product } from "@/lib/api";
-import { applyFilters, paginateItems } from "@/lib/client-filters";
+// Client-side price filter will remain local while search/pagination use server
 import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
 import ProductCard from "@/components/ProductCard";
@@ -22,19 +22,26 @@ type ProductGridProps = {
 async function ProductGrid({ query, price, page }: ProductGridProps) {
   console.log("📄 [ProductGrid] Rendering with:", { query, price, page });
   
-  // Fetch ALL products from backend (no filters on backend)
-  const allProducts = await listProducts();
-  console.log("📦 [ProductGrid] Fetched from API:", allProducts.length);
-  
-  // Apply client-side filtering (search + price)
-  const filteredProducts = applyFilters(allProducts, query, price);
-  
-  // Apply client-side pagination
-  const { items: products, total, pages, page: currentPage, from, to } = paginateItems(
-    filteredProducts,
-    page,
-    PAGE_SIZE
-  );
+  // Server-side pagination + search (per docs)
+  const resp = await listProducts({ q: query || undefined, page, limit: PAGE_SIZE });
+  const apiProducts: Product[] = resp.data;
+  const total = resp.total;
+  const pages = resp.pages;
+  const currentPage = resp.page;
+  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to = total === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, total);
+
+  // Optional client-side price filter on the current page
+  const products = price
+    ? apiProducts.filter(p => {
+        const val = Number(p.price);
+        if (price === "under-50") return val < 50;
+        if (price === "50-100") return val >= 50 && val <= 100;
+        if (price === "100-200") return val > 100 && val <= 200;
+        if (price === "200-plus") return val > 200;
+        return true;
+      })
+    : apiProducts;
   
   console.log("📊 [ProductGrid] Final results:", { total, pages, currentPage, showing: products.length });
   

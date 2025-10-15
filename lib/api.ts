@@ -1,4 +1,5 @@
 const API = process.env.NEXT_PUBLIC_API_BASE || "";
+import { fetchJson, handleResponse } from "@/lib/http";
 
 // Dev SSR over HTTPS localhost may fail due to self-signed certificates.
 // Opt-in bypass: set ALLOW_INSECURE_TLS=true to disable certificate verification
@@ -35,11 +36,71 @@ export type ListResp = {
 // Simplified: no filters sent to backend, all filtering done on FE
 export type ListProductsParams = Record<string, never>;
 
-function buildProductsUrl() {
+// -------------------------
+// Auth / Cart / Orders Types
+// -------------------------
+
+export type AuthToken = string;
+
+export type RegisterBody = { email: string; password: string };
+export type LoginBody = { email: string; password: string };
+export type LoginResp = { token: string };
+
+export type CartProduct = Product;
+export type CartItem = {
+  id: string;
+  product: CartProduct;
+  quantity: number;
+  lineTotal: number;
+};
+export type Cart = { items: CartItem[]; total: number };
+
+export type OrderItem = {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+};
+export type Order = {
+  id: string;
+  userId: string;
+  totalAmount: number;
+  status: "pending" | "paid" | "cancelled";
+  createdAt: string;
+  items: OrderItem[];
+};
+
+// -------------------------
+// Token utilities (client-only)
+// -------------------------
+
+const TOKEN_KEY = "auth:token";
+
+export function setAuthToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (!token) {
+    try { localStorage.removeItem(TOKEN_KEY); } catch {}
+  } else {
+    try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+
+// authHeaders no longer needed; fetchJson attaches Authorization automatically
+
+function buildProductsUrl(params?: { page?: number; limit?: number; q?: string }) {
   try {
     const base = API.trim();
     if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE");
-    const url = new URL(`${base}/api/Products`);
+    const url = new URL(`${base}/api/products`);
+    if (params?.page) url.searchParams.set("page", String(params.page));
+    if (params?.limit) url.searchParams.set("limit", String(params.limit));
+    if (params?.q) url.searchParams.set("q", params.q);
     return url;
   } catch (e) {
     console.error("Invalid or missing API base URL. Set NEXT_PUBLIC_API_BASE in .env.local, e.g. http://localhost:5000", e);
@@ -47,60 +108,120 @@ function buildProductsUrl() {
   }
 }
 
-export async function listProducts(): Promise<Product[]> {
-  console.log("🔍 [API] listProducts - Fetching ALL products from backend");
-
-  try {
-    const url = buildProductsUrl();
-    if (!url) {
-      console.error("❌ [API] Failed to build URL");
-      return [];
-    }
-
-    console.log("📡 [API] Fetching:", url.toString());
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(await res.text());
-    const result = await res.json();
-    
-    // Backend might return { data: [...] } or just [...]
-    const products = Array.isArray(result) ? result : (result.data || []);
-    console.log("✅ [API] Fetched products:", products.length);
-    return products;
-  } catch (err) {
-    // Network or TLS errors: provide a safe fallback for UI
-    console.error("❌ [API] listProducts fetch failed:", err);
-    return [];
-  }
+export async function listProducts(params: { page?: number; limit?: number; q?: string } = {}): Promise<ListResp> {
+  const url = buildProductsUrl(params);
+  if (!url) return { data: [], total: 0, page: params.page ?? 1, pages: 1 } as ListResp;
+  const { res, correlationId } = await fetchJson(url);
+  return await handleResponse<ListResp>(res, correlationId);
 }
 
 export async function getProduct(id: string): Promise<Product> {
-  const res = await fetch(`${API}/api/Products/${id}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`);
+  return await handleResponse<Product>(res, correlationId);
 }
 
 export async function createProduct(body: Omit<Product, "id">) {
-  const res = await fetch(`${API}/api/Products`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/products`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  return await handleResponse<Product>(res, correlationId);
 }
 
 export async function updateProduct(id: string, body: Partial<Omit<Product, "id">>) {
-  const res = await fetch(`${API}/api/Products/${id}`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  return await handleResponse<Product>(res, correlationId);
 }
 
 export async function deleteProduct(id: string) {
-  const res = await fetch(`${API}/api/Products/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`, { method: "DELETE" });
+  return await handleResponse<{ ok: true }>(res, correlationId);
+}
+
+// -------------------------
+// Auth API
+// -------------------------
+
+export async function register(body: RegisterBody): Promise<{ ok: true }> {
+  const { res, correlationId } = await fetchJson(`${API}/api/auth/register`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return await handleResponse<{ ok: true }>(res, correlationId);
+}
+
+export async function login(body: LoginBody): Promise<LoginResp> {
+  const { res, correlationId } = await fetchJson(`${API}/api/auth/login`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return await handleResponse<LoginResp>(res, correlationId);
+}
+
+export function logout(): void {
+  setAuthToken(null);
+}
+
+// -------------------------
+// Cart API (auth required)
+// -------------------------
+
+export async function getCart(): Promise<Cart> {
+  const { res, correlationId } = await fetchJson(`${API}/api/cart`);
+  return await handleResponse<Cart>(res, correlationId);
+}
+
+export async function addToCart(productId: string, quantity: number): Promise<CartItem> {
+  const { res, correlationId } = await fetchJson(`${API}/api/cart`, {
+    method: "POST",
+    body: JSON.stringify({ productId, quantity }),
+  });
+  return await handleResponse<CartItem>(res, correlationId);
+}
+
+export async function updateCartItem(id: string, quantity: number): Promise<CartItem> {
+  const { res, correlationId } = await fetchJson(`${API}/api/cart/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ quantity }),
+  });
+  return await handleResponse<CartItem>(res, correlationId);
+}
+
+export async function deleteCartItem(id: string): Promise<{ ok: true }> {
+  const { res, correlationId } = await fetchJson(`${API}/api/cart/${id}`, { method: "DELETE" });
+  return await handleResponse<{ ok: true }>(res, correlationId);
+}
+
+// -------------------------
+// Orders API (auth required)
+// -------------------------
+
+export async function listOrders(): Promise<Order[]> {
+  const { res, correlationId } = await fetchJson(`${API}/api/orders`);
+  return await handleResponse<Order[]>(res, correlationId);
+}
+
+export async function getOrder(id: string): Promise<Order> {
+  const { res, correlationId } = await fetchJson(`${API}/api/orders/${id}`);
+  return await handleResponse<Order>(res, correlationId);
+}
+
+export type CreateOrderResp =
+  | Order
+  | { order: Order; payos: unknown };
+
+export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" }): Promise<CreateOrderResp> {
+  const { res, correlationId } = await fetchJson(`${API}/api/orders`, {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
+  });
+  return await handleResponse<CreateOrderResp>(res, correlationId);
+}
+
+export async function payOrder(id: string): Promise<Order> {
+  const { res, correlationId } = await fetchJson(`${API}/api/orders/${id}/pay`, { method: "POST" });
+  return await handleResponse<Order>(res, correlationId);
 }

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import AddToCartButton from "@/components/AddToCartButton";
 
 interface ProductCardProps {
   product: Product;
@@ -47,12 +48,17 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.description}
           </p>
           
-          {/* Action indicator */}
-          <div className="mt-4 flex items-center text-purple-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            View Details
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          {/* Action buttons */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center text-purple-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+              View Details
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+              <AddToCartButton productId={product.id} />
+            </div>
           </div>
         </div>
       </div>

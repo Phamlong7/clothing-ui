@@ -3,6 +3,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { Inter } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 import ScrollPreserver from "@/components/ScrollPreserver";
 import { Suspense } from "react";
 
@@ -18,9 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ScrollPreserver />
         </Suspense>
         <ToastProvider>
-          <Nav />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
+          <AuthProvider>
+            <Nav />
+            <main className="min-h-screen">{children}</main>
+            <Footer />
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>

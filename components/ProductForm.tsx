@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createProduct, getProduct, updateProduct } from "@/lib/api";
+import type { HttpError } from "@/lib/http";
 import type { Product } from "@/lib/api";
 
 export default function ProductForm({ id }: { id?: string }) {
@@ -11,6 +12,7 @@ export default function ProductForm({ id }: { id?: string }) {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const isValid = useMemo(() => {
     if (!form.name.trim()) return false;
     const priceNum = Number(form.price);
@@ -33,6 +35,7 @@ export default function ProductForm({ id }: { id?: string }) {
     if (!isValid) return;
     setSaving(true);
     setError(null);
+    setFieldErrors({});
     const body: Omit<Product, "id"> = {
       name: form.name.trim(),
       description: form.description.trim(),
@@ -44,6 +47,13 @@ export default function ProductForm({ id }: { id?: string }) {
       else await createProduct(body);
       router.push("/");
     } catch (err: unknown) {
+      if (typeof err === "object" && err !== null && "kind" in err) {
+        const e = err as HttpError;
+        if (e.kind === "validation" && e.problem?.errors) {
+          setFieldErrors(e.problem.errors);
+          return;
+        }
+      }
       const msg = err instanceof Error ? err.message : "Failed to save product";
       setError(msg);
     } finally {
@@ -61,29 +71,75 @@ export default function ProductForm({ id }: { id?: string }) {
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Name</label>
-        <input className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50" placeholder="Name"
-               value={form.name} onChange={e=>setForm(s=>({...s,name:e.target.value}))}/>
-        {!form.name.trim() ? <p className="text-xs text-red-600">Name is required.</p> : null}
+        <input
+          className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
+          placeholder="Name"
+          aria-invalid={!form.name.trim() || !!fieldErrors.name}
+          aria-describedby={fieldErrors.name ? "name-error" : undefined}
+          value={form.name}
+          onChange={e=>setForm(s=>({...s,name:e.target.value}))}
+        />
+        {!form.name.trim() && <p className="text-xs text-red-600">Name is required.</p>}
+        {fieldErrors.name && (
+          <ul id="name-error" className="text-xs text-red-600 list-disc ml-4">
+            {fieldErrors.name.map((m, i) => (<li key={i}>{m}</li>))}
+          </ul>
+        )}
       </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Description</label>
-        <textarea className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50" placeholder="Short description"
-                  rows={4}
-                  value={form.description} onChange={e=>setForm(s=>({...s,description:e.target.value}))}/>
+        <textarea
+          className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
+          placeholder="Short description"
+          rows={4}
+          aria-invalid={!!fieldErrors.description}
+          aria-describedby={fieldErrors.description ? "description-error" : undefined}
+          value={form.description}
+          onChange={e=>setForm(s=>({...s,description:e.target.value}))}
+        />
+        {fieldErrors.description && (
+          <ul id="description-error" className="text-xs text-red-600 list-disc ml-4">
+            {fieldErrors.description.map((m, i) => (<li key={i}>{m}</li>))}
+          </ul>
+        )}
       </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Price</label>
-        <input className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50" placeholder="Price" type="number" step="0.01" min="0"
-               value={form.price} onChange={e=>setForm(s=>({...s,price:e.target.value}))}/>
-        {(Number.isNaN(Number(form.price)) || Number(form.price) < 0) ? <p className="text-xs text-red-600">Price must be a positive number.</p> : null}
+        <input
+          className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
+          placeholder="Price" type="number" step="0.01" min="0"
+          aria-invalid={(Number.isNaN(Number(form.price)) || Number(form.price) < 0) || !!fieldErrors.price}
+          aria-describedby={fieldErrors.price ? "price-error" : undefined}
+          value={form.price}
+          onChange={e=>setForm(s=>({...s,price:e.target.value}))}
+        />
+        {(Number.isNaN(Number(form.price)) || Number(form.price) < 0) && (
+          <p className="text-xs text-red-600">Price must be a positive number.</p>
+        )}
+        {fieldErrors.price && (
+          <ul id="price-error" className="text-xs text-red-600 list-disc ml-4">
+            {fieldErrors.price.map((m, i) => (<li key={i}>{m}</li>))}
+          </ul>
+        )}
       </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Image URL (optional)</label>
-        <input className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50" placeholder="https://..."
-               value={form.image} onChange={e=>setForm(s=>({...s,image:e.target.value}))}/>
+        <input
+          className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
+          placeholder="https://..."
+          aria-invalid={!!fieldErrors.image}
+          aria-describedby={fieldErrors.image ? "image-error" : undefined}
+          value={form.image}
+          onChange={e=>setForm(s=>({...s,image:e.target.value}))}
+        />
+        {fieldErrors.image && (
+          <ul id="image-error" className="text-xs text-red-600 list-disc ml-4">
+            {fieldErrors.image.map((m, i) => (<li key={i}>{m}</li>))}
+          </ul>
+        )}
       </div>
 
       <div className="flex gap-2">

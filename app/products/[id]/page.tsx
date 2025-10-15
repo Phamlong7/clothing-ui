@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import { getProduct, Product } from "@/lib/api";
 import DeleteButton from "@/components/DeleteButton";
+import AddToCartButton from "@/components/AddToCartButton";
 import { notFound } from "next/navigation";
 import LinkButton from "@/components/LinkButton";
 import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
@@ -107,6 +108,14 @@ async function ProductContent({ id }: { id: string }) {
                   <p className="text-slate-200 text-lg leading-relaxed">
                     {p.description}
                   </p>
+                </div>
+
+                {/* Add to Cart Button */}
+                <div className="pt-6">
+                  <AddToCartButton 
+                    productId={p.id} 
+                    className="w-full !h-[56px] !px-8 !py-4 !text-lg"
+                  />
                 </div>
 
                 {/* Action Buttons */}
