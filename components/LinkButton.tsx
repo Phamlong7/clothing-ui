@@ -9,20 +9,21 @@ type Props = {
   className?: string;
   variant?: "primary" | "ghost";
   size?: "sm" | "md" | "lg";
+  disabled?: boolean;
 };
 
-export default function LinkButton({ href, children, className = "", variant = "primary", size = "md" }: Props) {
+export default function LinkButton({ href, children, className = "", variant = "primary", size = "md", disabled = false }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   const handleClick = useCallback(() => {
-    if (pending) return;
+    if (pending || disabled) return;
     setPending(true);
     startTransition(() => {
       router.push(href);
       setTimeout(() => setPending(false), 800);
     });
-  }, [href, pending, router]);
+  }, [href, pending, router, disabled]);
 
   const base = "inline-flex items-center justify-center rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 ease-out";
   const sizes = {
@@ -38,7 +39,7 @@ export default function LinkButton({ href, children, className = "", variant = "
     <button
       type="button"
       onClick={handleClick}
-      disabled={pending}
+      disabled={pending || disabled}
       className={`${base} ${sizes} ${visual} ${className}`}
     >
       {pending ? (

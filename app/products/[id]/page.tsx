@@ -5,6 +5,7 @@ import DeleteButton from "@/components/DeleteButton";
 import AddToCartButton from "@/components/AddToCartButton";
 import { notFound } from "next/navigation";
 import LinkButton from "@/components/LinkButton";
+import { useAuth } from "@/components/AuthProvider";
 import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
 import { UI_TEXT, IMAGE_EXTENSIONS } from "@/lib/constants";
 import { formatPrice } from "@/lib/utils";
@@ -119,30 +120,37 @@ async function ProductContent({ id }: { id: string }) {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <LinkButton 
-                    href={`/products/${p.id}/edit`} 
-                    size="lg"
-                    className="flex-1 w-full !h-[56px] !px-8 !py-4 !text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    <div className="flex items-center justify-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      {UI_TEXT.actions.edit}
-                    </div>
-                  </LinkButton>
-                  
-                  <DeleteButton 
-                    id={p.id} 
-                    productName={p.name}
-                  />
-                </div>
+                <ClientActionButtons id={p.id} name={p.name} />
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Client wrapper to respect auth for button disabling
+function ClientActionButtons({ id, name }: { id: string; name: string }) {
+  "use client";
+  const { isAuthenticated } = useAuth();
+  const disabled = !isAuthenticated;
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 pt-6">
+      <LinkButton
+        href={`/products/${id}/edit`}
+        size="lg"
+        disabled={disabled}
+        className={`flex-1 w-full !h-[56px] !px-8 !py-4 !text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+      >
+        <div className="flex items-center justify-center">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          {UI_TEXT.actions.edit}
+        </div>
+      </LinkButton>
+      <DeleteButton id={id} productName={name} disabled={disabled} />
     </div>
   );
 }
