@@ -1,0 +1,121 @@
+"use client";
+
+import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { createOrder } from "@/lib/api";
+import { useToast } from "@/components/ToastProvider";
+import Button from "@/components/ui/Button";
+import Link from "next/link";
+
+export default function CheckoutPage() {
+  const { isAuthenticated } = useAuth();
+  const { show } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"simulate" | "payos">("simulate");
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center p-4">
+        <div className="text-center text-white">
+          <h1 className="text-3xl font-bold mb-4">Please Login</h1>
+          <p className="text-white/70 mb-6">You need to be logged in to checkout.</p>
+          <Link href="/auth/login">
+            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold">
+              Login
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const handlePlaceOrder = async () => {
+    setIsLoading(true);
+    try {
+      const result = await createOrder({ paymentMethod });
+      
+      if (paymentMethod === "simulate") {
+        show("Order placed successfully! Payment simulated.", "success");
+        window.location.href = "/checkout/success";
+      } else {
+        // Handle PayOS integration
+        show("Redirecting to payment...", "success");
+        // In a real app, you'd redirect to PayOS payment URL
+        console.log("PayOS result:", result);
+      }
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      show("Failed to place order. Please try again.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8">
+          <h1 className="text-3xl font-bold text-white mb-8">Checkout</h1>
+          
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-4">Payment Method</h2>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="simulate"
+                    checked={paymentMethod === "simulate"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos")}
+                    className="w-4 h-4 text-purple-600"
+                  />
+                  <span className="text-white">Simulate Payment (Demo)</span>
+                </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="payos"
+                    checked={paymentMethod === "payos"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos")}
+                    className="w-4 h-4 text-purple-600"
+                  />
+                  <span className="text-white">PayOS Payment</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30">
+              <h3 className="text-lg font-semibold text-white mb-4">Order Summary</h3>
+              <div className="space-y-2 text-white/80">
+                <p>Items will be calculated from your cart</p>
+                <p>Shipping: Free</p>
+                <p>Tax: Included</p>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <Link href="/cart" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-white/30 text-white hover:bg-white/20"
+                >
+                  Back to Cart
+                </Button>
+              </Link>
+              <Button
+                onClick={handlePlaceOrder}
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold disabled:opacity-50"
+              >
+                {isLoading ? "Placing Order..." : "Place Order"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

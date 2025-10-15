@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-// import Link from "next/link";
 import { listProducts, Product } from "@/lib/api";
 import { applyFilters, paginateItems } from "@/lib/client-filters";
 import Hero from "@/components/Hero";
@@ -22,14 +21,11 @@ type ProductGridProps = {
 async function ProductGrid({ query, price, page }: ProductGridProps) {
   console.log("📄 [ProductGrid] Rendering with:", { query, price, page });
   
-  // Fetch ALL products from backend (no filters on backend)
+  // Fetch all products from backend (no server-side filtering)
   const allProducts = await listProducts();
-  console.log("📦 [ProductGrid] Fetched from API:", allProducts.length);
   
-  // Apply client-side filtering (search + price)
+  // Apply client-side filtering and pagination
   const filteredProducts = applyFilters(allProducts, query, price);
-  
-  // Apply client-side pagination
   const { items: products, total, pages, page: currentPage, from, to } = paginateItems(
     filteredProducts,
     page,
