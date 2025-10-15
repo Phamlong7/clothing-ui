@@ -30,6 +30,17 @@ export default function ProductForm({ id }: { id?: string }) {
     })();
   }, [id]);
 
+  function isInvalid(field: "name" | "description" | "price" | "image"): boolean {
+    if (field === "name") return !form.name.trim() || !!fieldErrors.name;
+    if (field === "description") return !!fieldErrors.description;
+    if (field === "price") {
+      const n = Number(form.price);
+      return (Number.isNaN(n) || n < 0) || !!fieldErrors.price;
+    }
+    if (field === "image") return !!fieldErrors.image;
+    return false;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid) return;
@@ -74,7 +85,7 @@ export default function ProductForm({ id }: { id?: string }) {
         <input
           className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
           placeholder="Name"
-          aria-invalid={!form.name.trim() || !!fieldErrors.name}
+          aria-invalid={isInvalid("name")}
           aria-describedby={fieldErrors.name ? "name-error" : undefined}
           value={form.name}
           onChange={e=>setForm(s=>({...s,name:e.target.value}))}
@@ -93,7 +104,7 @@ export default function ProductForm({ id }: { id?: string }) {
           className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
           placeholder="Short description"
           rows={4}
-          aria-invalid={!!fieldErrors.description}
+          aria-invalid={isInvalid("description")}
           aria-describedby={fieldErrors.description ? "description-error" : undefined}
           value={form.description}
           onChange={e=>setForm(s=>({...s,description:e.target.value}))}
@@ -110,7 +121,7 @@ export default function ProductForm({ id }: { id?: string }) {
         <input
           className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
           placeholder="Price" type="number" step="0.01" min="0"
-          aria-invalid={(Number.isNaN(Number(form.price)) || Number(form.price) < 0) || !!fieldErrors.price}
+          aria-invalid={isInvalid("price")}
           aria-describedby={fieldErrors.price ? "price-error" : undefined}
           value={form.price}
           onChange={e=>setForm(s=>({...s,price:e.target.value}))}
@@ -130,7 +141,7 @@ export default function ProductForm({ id }: { id?: string }) {
         <input
           className="w-full border px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-black/50"
           placeholder="https://..."
-          aria-invalid={!!fieldErrors.image}
+          aria-invalid={isInvalid("image")}
           aria-describedby={fieldErrors.image ? "image-error" : undefined}
           value={form.image}
           onChange={e=>setForm(s=>({...s,image:e.target.value}))}
