@@ -14,7 +14,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<"simulate" | "payos" | "vnpay">("simulate");
+  const [selectedMethods, setSelectedMethods] = useState<Record<string, "simulate" | "payos" | "vnpay">>({});
 
   const loadOrders = useCallback(async () => {
     try {
@@ -39,8 +39,9 @@ export default function OrdersPage() {
   const handlePayNow = async (orderId: string) => {
     try {
       setPayingId(orderId);
+      const method = selectedMethods[orderId] ?? "simulate";
       // Prefer dedicated VNPAY endpoint when chosen
-      if (selectedMethod === "vnpay") {
+      if (method === "vnpay") {
         const { url } = await vnpayCreate(orderId);
         if (url) {
           show("Redirecting to VNPAY...", "success");
@@ -48,7 +49,7 @@ export default function OrdersPage() {
           return;
         }
       }
-      const result = await payOrder(orderId, { paymentMethod: selectedMethod });
+      const result = await payOrder(orderId, { paymentMethod: method });
       // Redirect if VNPAY returns a URL
       const vnp = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
         | { vnpay?: { url?: string } }
@@ -60,9 +61,9 @@ export default function OrdersPage() {
         return;
       }
 
-      if (selectedMethod === "payos") {
+      if (method === "payos") {
         show("Redirecting to PayPal (PayOS demo placeholder)...", "success");
-      } else if (selectedMethod === "simulate") {
+      } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
       } else {
         show("Payment successful", "success");
@@ -182,15 +183,26 @@ export default function OrdersPage() {
                   </Link>
                   {order.status === "pending" ? (
                     <div className="flex items-center gap-3">
-                      <select
-                        value={selectedMethod}
-                        onChange={(e) => setSelectedMethod(e.target.value as typeof selectedMethod)}
-                        className="px-3 py-2 rounded-xl bg-white/10 border border-white/30 text-white text-sm focus:outline-none"
-                      >
-                        <option value="simulate" className="text-slate-900">Demo (Simulate)</option>
-                        <option value="vnpay" className="text-slate-900">VNPAY</option>
-                        <option value="payos" className="text-slate-900">PayPal (PayOS demo)</option>
-                      </select>
+                      <div className="relative">
+                        <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/80" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                        </svg>
+                        <select
+                          value={selectedMethods[order.id] ?? "simulate"}
+                          onChange={(e) =>
+                            setSelectedMethods((prev) => ({
+                              ...prev,
+                              [order.id]: e.target.value as "simulate" | "payos" | "vnpay",
+                            }))
+                          }
+                          className="appearance-none pl-9 pr-9 py-2 rounded-xl bg-white/10 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-pink-400/50 backdrop-blur placeholder:text-white/60 hover:bg-white/15 transition-colors"
+                        >
+                          <option value="simulate" className="text-slate-900">Demo (Simulate)</option>
+                          <option value="vnpay" className="text-slate-900">VNPAY</option>
+                          <option value="payos" className="text-slate-900">PayPal (PayOS demo)</option>
+                        </select>
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.7)]"></span>
+                      </div>
                       <Button
                         onClick={() => handlePayNow(order.id)}
                         disabled={payingId === order.id}
