@@ -10,7 +10,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (
-    <Link href={`/products/${product.id}`} className="group block">
+    <div className="group block">
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20 hover:border-white/30 group-hover:scale-[1.02] transform">
         <div className="relative h-72 bg-gradient-to-br from-slate-50 via-white to-slate-50 overflow-hidden">
           {product.image ? (
@@ -50,18 +50,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           
           {/* Action buttons */}
           <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center text-purple-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+            <Link href={`/products/${product.id}`} className="flex items-center text-purple-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
               View Details
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </div>
+            </Link>
             <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
               <AddToCartButton productId={product.id} />
             </div>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
