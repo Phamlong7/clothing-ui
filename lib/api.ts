@@ -97,7 +97,7 @@ function buildProductsUrl() {
   try {
     const base = API.trim();
     if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE");
-    const url = new URL(`${base}/api/products`);
+    const url = new URL(`${base}/api/Products`);
     return url;
   } catch (e) {
     console.error("Invalid or missing API base URL. Set NEXT_PUBLIC_API_BASE in .env.local, e.g. http://localhost:5000", e);
@@ -108,17 +108,22 @@ function buildProductsUrl() {
 export async function listProducts(): Promise<Product[]> {
   const url = buildProductsUrl();
   if (!url) return [];
-  const { res, correlationId } = await fetchJson(url);
-  return await handleResponse<Product[]>(res, correlationId);
+  try {
+    const { res, correlationId } = await fetchJson(url);
+    return await handleResponse<Product[]>(res, correlationId);
+  } catch (err) {
+    console.error("listProducts failed:", err);
+    return [];
+  }
 }
 
 export async function getProduct(id: string): Promise<Product> {
-  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`);
+  const { res, correlationId } = await fetchJson(`${API}/api/Products/${id}`);
   return await handleResponse<Product>(res, correlationId);
 }
 
 export async function createProduct(body: Omit<Product, "id">) {
-  const { res, correlationId } = await fetchJson(`${API}/api/products`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Products`, {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -126,7 +131,7 @@ export async function createProduct(body: Omit<Product, "id">) {
 }
 
 export async function updateProduct(id: string, body: Partial<Omit<Product, "id">>) {
-  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Products/${id}`, {
     method: "PUT",
     body: JSON.stringify(body),
   });
@@ -134,7 +139,7 @@ export async function updateProduct(id: string, body: Partial<Omit<Product, "id"
 }
 
 export async function deleteProduct(id: string) {
-  const { res, correlationId } = await fetchJson(`${API}/api/products/${id}`, { method: "DELETE" });
+  const { res, correlationId } = await fetchJson(`${API}/api/Products/${id}`, { method: "DELETE" });
   return await handleResponse<{ ok: true }>(res, correlationId);
 }
 
@@ -143,7 +148,7 @@ export async function deleteProduct(id: string) {
 // -------------------------
 
 export async function register(body: RegisterBody): Promise<{ ok: true }> {
-  const { res, correlationId } = await fetchJson(`${API}/api/auth/register`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Auth/register`, {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -151,7 +156,7 @@ export async function register(body: RegisterBody): Promise<{ ok: true }> {
 }
 
 export async function login(body: LoginBody): Promise<LoginResp> {
-  const { res, correlationId } = await fetchJson(`${API}/api/auth/login`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Auth/login`, {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -167,12 +172,12 @@ export function logout(): void {
 // -------------------------
 
 export async function getCart(): Promise<Cart> {
-  const { res, correlationId } = await fetchJson(`${API}/api/cart`);
+  const { res, correlationId } = await fetchJson(`${API}/api/Cart`);
   return await handleResponse<Cart>(res, correlationId);
 }
 
 export async function addToCart(productId: string, quantity: number): Promise<CartItem> {
-  const { res, correlationId } = await fetchJson(`${API}/api/cart`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Cart`, {
     method: "POST",
     body: JSON.stringify({ productId, quantity }),
   });
@@ -180,7 +185,7 @@ export async function addToCart(productId: string, quantity: number): Promise<Ca
 }
 
 export async function updateCartItem(id: string, quantity: number): Promise<CartItem> {
-  const { res, correlationId } = await fetchJson(`${API}/api/cart/${id}`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Cart/${id}`, {
     method: "PUT",
     body: JSON.stringify({ quantity }),
   });
@@ -188,7 +193,7 @@ export async function updateCartItem(id: string, quantity: number): Promise<Cart
 }
 
 export async function deleteCartItem(id: string): Promise<{ ok: true }> {
-  const { res, correlationId } = await fetchJson(`${API}/api/cart/${id}`, { method: "DELETE" });
+  const { res, correlationId } = await fetchJson(`${API}/api/Cart/${id}`, { method: "DELETE" });
   return await handleResponse<{ ok: true }>(res, correlationId);
 }
 
@@ -197,12 +202,12 @@ export async function deleteCartItem(id: string): Promise<{ ok: true }> {
 // -------------------------
 
 export async function listOrders(): Promise<Order[]> {
-  const { res, correlationId } = await fetchJson(`${API}/api/orders`);
+  const { res, correlationId } = await fetchJson(`${API}/api/Orders`);
   return await handleResponse<Order[]>(res, correlationId);
 }
 
 export async function getOrder(id: string): Promise<Order> {
-  const { res, correlationId } = await fetchJson(`${API}/api/orders/${id}`);
+  const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}`);
   return await handleResponse<Order>(res, correlationId);
 }
 
@@ -211,7 +216,7 @@ export type CreateOrderResp =
   | { order: Order; payos: unknown };
 
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" }): Promise<CreateOrderResp> {
-  const { res, correlationId } = await fetchJson(`${API}/api/orders`, {
+  const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
     body: JSON.stringify(payload || {}),
   });
@@ -219,6 +224,6 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "payo
 }
 
 export async function payOrder(id: string): Promise<Order> {
-  const { res, correlationId } = await fetchJson(`${API}/api/orders/${id}/pay`, { method: "POST" });
+  const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST" });
   return await handleResponse<Order>(res, correlationId);
 }

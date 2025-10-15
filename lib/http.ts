@@ -71,7 +71,7 @@ export async function handleResponse<T = unknown>(res: Response, correlationId?:
     if (res.status === 400 && problem.errors) throw { kind: "validation", problem, correlationId: cid } satisfies HttpError;
     if (res.status === 401) {
       // Only emit unauthorized for protected endpoints, not for login attempts
-      const url = res.url || "";
+      const url = (res.url || "").toLowerCase();
       const isLoginEndpoint = url.includes("/auth/login");
       if (!isLoginEndpoint) {
         emitUnauthorized();
@@ -85,7 +85,7 @@ export async function handleResponse<T = unknown>(res: Response, correlationId?:
   const body = await res.text().catch(() => "");
   if (res.status === 401) {
     // Only emit unauthorized for protected endpoints, not for login attempts
-    const url = res.url || "";
+    const url = (res.url || "").toLowerCase();
     const isLoginEndpoint = url.includes("/auth/login");
     if (!isLoginEndpoint) {
       emitUnauthorized();
