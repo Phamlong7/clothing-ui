@@ -110,7 +110,17 @@ export async function listProducts(): Promise<Product[]> {
   if (!url) return [];
   try {
     const { res, correlationId } = await fetchJson(url);
-    return await handleResponse<Product[]>(res, correlationId);
+    const data = await handleResponse<unknown>(res, correlationId);
+    if (Array.isArray(data)) return data as Product[];
+    if (
+      data &&
+      typeof data === "object" &&
+      Array.isArray((data as { data?: unknown }).data)
+    ) {
+      const wrapped = data as { data?: unknown };
+      return (wrapped.data as Product[]) || [];
+    }
+    return [];
   } catch (err) {
     console.error("listProducts failed:", err);
     return [];
