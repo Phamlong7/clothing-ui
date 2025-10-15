@@ -33,7 +33,7 @@ export type ListResp = {
   pages: number;
 };
 
-// Simplified: no filters sent to backend, all filtering done on FE
+// Client-side filtering only - backend returns all products
 export type ListProductsParams = Record<string, never>;
 
 // -------------------------
@@ -93,14 +93,11 @@ export function getAuthToken(): string | null {
 
 // authHeaders no longer needed; fetchJson attaches Authorization automatically
 
-function buildProductsUrl(params?: { page?: number; limit?: number; q?: string }) {
+function buildProductsUrl() {
   try {
     const base = API.trim();
     if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE");
     const url = new URL(`${base}/api/products`);
-    if (params?.page) url.searchParams.set("page", String(params.page));
-    if (params?.limit) url.searchParams.set("limit", String(params.limit));
-    if (params?.q) url.searchParams.set("q", params.q);
     return url;
   } catch (e) {
     console.error("Invalid or missing API base URL. Set NEXT_PUBLIC_API_BASE in .env.local, e.g. http://localhost:5000", e);
@@ -108,11 +105,11 @@ function buildProductsUrl(params?: { page?: number; limit?: number; q?: string }
   }
 }
 
-export async function listProducts(params: { page?: number; limit?: number; q?: string } = {}): Promise<ListResp> {
-  const url = buildProductsUrl(params);
-  if (!url) return { data: [], total: 0, page: params.page ?? 1, pages: 1 } as ListResp;
+export async function listProducts(): Promise<Product[]> {
+  const url = buildProductsUrl();
+  if (!url) return [];
   const { res, correlationId } = await fetchJson(url);
-  return await handleResponse<ListResp>(res, correlationId);
+  return await handleResponse<Product[]>(res, correlationId);
 }
 
 export async function getProduct(id: string): Promise<Product> {

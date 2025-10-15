@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const off = onUnauthorized(() => {
       apiLogout();
       setToken(null);
-      show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "error");
+      show("Your session has expired. Please log in again.", "error");
       router.replace("/auth/login");
     });
     return off;
