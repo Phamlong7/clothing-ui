@@ -23,8 +23,11 @@ function PaymentResultContent() {
   const [order, setOrder] = useState<Order | null>(null);
   const [pollingStarted, setPollingStarted] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     if (!orderId) {
       setStatus("failed");
       return;
@@ -41,15 +44,20 @@ function PaymentResultContent() {
         const result = await waitForPayment(orderId, abortController.signal, 60, 3000);
         
         console.log("[PaymentResult] waitForPayment returned:", result);
-        if (!abortController.signal.aborted) {
+        console.log("[PaymentResult] abortController.signal.aborted:", abortController.signal.aborted);
+        console.log("[PaymentResult] isMountedRef.current:", isMountedRef.current);
+        
+        if (isMountedRef.current && !abortController.signal.aborted) {
           console.log("[PaymentResult] Setting status to:", result.status);
           setStatus(result.status);
           setOrder(result.order);
           console.log("[PaymentResult] State updated - status should be:", result.status);
+        } else {
+          console.log("[PaymentResult] ❌ Aborted or unmounted! Cannot update state");
         }
       } catch (error) {
         console.error("Polling error:", error);
-        if (!abortController.signal.aborted) {
+        if (isMountedRef.current && !abortController.signal.aborted) {
           setStatus("failed");
         }
       }
@@ -58,6 +66,7 @@ function PaymentResultContent() {
     startPolling();
 
     return () => {
+      isMountedRef.current = false;
       abortController.abort();
     };
   }, [orderId, pollingStarted]);
