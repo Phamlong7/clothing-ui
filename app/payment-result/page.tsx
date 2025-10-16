@@ -39,6 +39,31 @@ export default function PaymentResultPage() {
     };
   }, [orderId]);
 
+  // Polling while pending to auto-refresh status from IPN/Return
+  useEffect(() => {
+    if (!orderId) return;
+    if (!order || order.status !== "pending") return;
+    let attempts = 0;
+    const maxAttempts = 15; // ~30s if interval=2000ms
+    const interval = setInterval(async () => {
+      attempts += 1;
+      try {
+        const o = await getOrder(orderId);
+        setOrder(o);
+        if (o.status !== "pending") {
+          clearInterval(interval);
+        }
+      } catch {
+        // ignore transient errors during polling
+      } finally {
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [orderId, order]);
+
   const isPaid = order?.status === "paid";
   const isPending = order?.status === "pending";
 

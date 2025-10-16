@@ -85,6 +85,8 @@ export default function OrdersPage() {
         show("Redirecting to payment...", "success");
       } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
+        // Navigate to result page to reflect updated status
+        window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
       } else {
         show("Payment successful", "success");
       }

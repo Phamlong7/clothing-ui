@@ -74,8 +74,13 @@ export default function CheckoutPage() {
             window.location.href = vnpUrl;
             return;
           }
+          // If no URL provided, still route to result page to check status
+          if (orderId) {
+            show("Checking payment status...", "success");
+            window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+            return;
+          }
           show("Redirecting to payment...", "success");
-          console.log("Payment payload:", payment);
         } else {
           show("Payment created.", "success");
         }
