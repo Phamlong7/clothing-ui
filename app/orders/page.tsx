@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { listOrders, payOrder, Order, vnpayCreate } from "@/lib/api";
+import { listOrders, payOrder, Order, vnpayCreate, PaymentEnvelope } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
 import Link from "next/link";
@@ -50,19 +50,26 @@ export default function OrdersPage() {
         }
       }
       const result = await payOrder(orderId, { paymentMethod: method });
-      // Redirect if VNPAY returns a URL
-      const vnp = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
-        | { vnpay?: { url?: string } }
-        | undefined;
-      const payUrl = vnp?.vnpay?.url;
-      if (payUrl) {
-        show("Redirecting to VNPAY...", "success");
-        window.location.href = payUrl;
-        return;
-      }
-
-      if (method === "payos") {
-        show("Redirecting to PayPal (PayOS demo placeholder)...", "success");
+      const envelope = result as PaymentEnvelope | Order;
+      const hasPayment = (val: unknown): val is PaymentEnvelope =>
+        typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
+      if (hasPayment(envelope)) {
+        const payment = envelope.payment as unknown;
+        const getPaymentUrl = (p: unknown): string | undefined => {
+          if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
+            const u = (p as { url?: unknown }).url;
+            return typeof u === "string" ? u : undefined;
+          }
+          return undefined;
+        };
+        const vnpUrl = getPaymentUrl(payment);
+        if (vnpUrl) {
+          show("Redirecting to VNPAY...", "success");
+          window.location.href = vnpUrl;
+          return;
+        }
+        show("Redirecting to payment...", "success");
+        console.log("Payment payload:", payment);
       } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
       } else {

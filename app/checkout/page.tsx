@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { createOrder, Order } from "@/lib/api";
+import { createOrder, Order, PaymentEnvelope } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
@@ -37,22 +37,30 @@ export default function CheckoutPage() {
       if (paymentMethod === "simulate") {
         show("Order placed successfully! Payment simulated.", "success");
         window.location.href = "/checkout/success";
-      } else if (paymentMethod === "payos") {
-        // Handle PayOS integration
-        show("Redirecting to payment...", "success");
-        // In a real app, you'd redirect to PayOS payment URL
-        console.log("PayOS result:", result);
-      } else if (paymentMethod === "vnpay") {
-        // VNPAY returns a url inside result.vnpay.url per docs
-        const url = (result as { vnpay?: { url?: string } } | Order | { order: Order; payos: unknown }) as
-          | { vnpay?: { url?: string } }
-          | undefined;
-        const paymentUrl = url?.vnpay?.url;
-        if (paymentUrl) {
-          show("Redirecting to VNPAY...", "success");
-          window.location.href = paymentUrl;
+      } else {
+        // PayOS or VNPAY should return an envelope with payment details
+        const envelope = result as PaymentEnvelope | Order;
+        const hasPayment = (val: unknown): val is PaymentEnvelope =>
+          typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
+        if (hasPayment(envelope)) {
+          const payment = envelope.payment as unknown;
+          const getPaymentUrl = (p: unknown): string | undefined => {
+            if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
+              const u = (p as { url?: unknown }).url;
+              return typeof u === "string" ? u : undefined;
+            }
+            return undefined;
+          };
+          const vnpUrl = getPaymentUrl(payment);
+          if (vnpUrl) {
+            show("Redirecting to VNPAY...", "success");
+            window.location.href = vnpUrl;
+            return;
+          }
+          show("Redirecting to payment...", "success");
+          console.log("Payment payload:", payment);
         } else {
-          show("Failed to get VNPAY payment URL.", "error");
+          show("Payment created.", "success");
         }
       }
     } catch (error) {

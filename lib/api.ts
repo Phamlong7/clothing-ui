@@ -222,10 +222,10 @@ export async function getOrder(id: string): Promise<Order> {
   return await handleResponse<Order>(res, correlationId);
 }
 
-export type CreateOrderResp =
-  | Order
-  | { order: Order; payos: unknown }
-  | { order: Order; vnpay: { url: string } };
+// Create/Pay responses can be either a direct Order (simulate)
+// or an envelope containing id, order, and payment payload (PayOS/VNPAY)
+export type PaymentEnvelope = { id: string; order: Order; payment: unknown };
+export type CreateOrderResp = Order | PaymentEnvelope;
 
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<CreateOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
@@ -235,10 +235,7 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "payo
   return await handleResponse<CreateOrderResp>(res, correlationId);
 }
 
-export type PayOrderResp =
-  | Order
-  | { order: Order; payos: unknown }
-  | { order: Order; vnpay: { url: string } };
+export type PayOrderResp = Order | PaymentEnvelope;
 
 export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<PayOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(payload || {}) });
