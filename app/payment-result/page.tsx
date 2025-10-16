@@ -47,17 +47,18 @@ function PaymentResultContent() {
         console.log("[PaymentResult] abortController.signal.aborted:", abortController.signal.aborted);
         console.log("[PaymentResult] isMountedRef.current:", isMountedRef.current);
         
-        if (isMountedRef.current && !abortController.signal.aborted) {
-          console.log("[PaymentResult] Setting status to:", result.status);
+        // Only check if component is mounted, not abort signal (React Strict Mode aborts on double-render)
+        if (isMountedRef.current) {
+          console.log("[PaymentResult] ✅ Setting status to:", result.status);
           setStatus(result.status);
           setOrder(result.order);
-          console.log("[PaymentResult] State updated - status should be:", result.status);
+          console.log("[PaymentResult] State updated successfully!");
         } else {
-          console.log("[PaymentResult] ❌ Aborted or unmounted! Cannot update state");
+          console.log("[PaymentResult] ❌ Component unmounted! Cannot update state");
         }
       } catch (error) {
         console.error("Polling error:", error);
-        if (isMountedRef.current && !abortController.signal.aborted) {
+        if (isMountedRef.current) {
           setStatus("failed");
         }
       }
