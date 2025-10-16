@@ -226,34 +226,27 @@ export async function getOrder(id: string): Promise<Order> {
 export type PaymentEnvelope = { id: string; order: Order; payment: unknown };
 export type CreateOrderResp = Order | PaymentEnvelope;
 
-const providerMap: Record<"simulate" | "stripe" | "vnpay", string> = {
-  simulate: "Simulate",
-  stripe: "Stripe",
-  vnpay: "VnPay",
-};
-
-function mapProvider(method?: "simulate" | "stripe" | "vnpay") {
-  if (!method) return undefined;
-  return providerMap[method];
-}
-
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<CreateOrderResp> {
-  const provider = mapProvider(payload?.paymentMethod);
-  const body = provider ? { Provider: provider } : {};
+  const body = payload?.paymentMethod ? { paymentMethod: payload.paymentMethod } : {};
+  console.log("[API] createOrder - payload:", payload, "→ body:", body);
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
     body: JSON.stringify(body),
   });
-  return await handleResponse<CreateOrderResp>(res, correlationId);
+  const result = await handleResponse<CreateOrderResp>(res, correlationId);
+  console.log("[API] createOrder - response:", result);
+  return result;
 }
 
 export type PayOrderResp = Order | PaymentEnvelope;
 
 export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<PayOrderResp> {
-  const provider = mapProvider(payload?.paymentMethod);
-  const body = provider ? { Provider: provider } : {};
+  const body = payload?.paymentMethod ? { provider: payload.paymentMethod } : {};
+  console.log("[API] payOrder - payload:", payload, "→ body:", body);
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(body) });
-  return await handleResponse<PayOrderResp>(res, correlationId);
+  const result = await handleResponse<PayOrderResp>(res, correlationId);
+  console.log("[API] payOrder - response:", result);
+  return result;
 }
 
 export async function vnpayCreate(orderId: string): Promise<{ url: string }> {
