@@ -14,7 +14,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
-  const [selectedMethods, setSelectedMethods] = useState<Record<string, "simulate" | "payos" | "vnpay">>({});
+  const [selectedMethods, setSelectedMethods] = useState<Record<string, "simulate" | "stripe" | "vnpay">>({});
 
   const loadOrders = useCallback(async () => {
     try {
@@ -85,6 +85,8 @@ export default function OrdersPage() {
         show("Redirecting to payment...", "success");
       } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
+        // Navigate to result page to reflect updated status
+        window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
       } else {
         show("Payment successful", "success");
       }
@@ -212,14 +214,14 @@ export default function OrdersPage() {
                           onChange={(e) =>
                             setSelectedMethods((prev) => ({
                               ...prev,
-                              [order.id]: e.target.value as "simulate" | "payos" | "vnpay",
+                              [order.id]: e.target.value as "simulate" | "stripe" | "vnpay",
                             }))
                           }
                           className="appearance-none pl-9 pr-9 py-2 rounded-xl bg-white/10 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-pink-400/50 backdrop-blur placeholder:text-white/60 hover:bg-white/15 transition-colors"
                         >
                           <option value="simulate" className="text-slate-900">Demo (Simulate)</option>
                           <option value="vnpay" className="text-slate-900">VNPAY</option>
-                          <option value="payos" className="text-slate-900">PayPal (PayOS demo)</option>
+                          <option value="stripe" className="text-slate-900">Stripe</option>
                         </select>
                         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.7)]"></span>
                       </div>

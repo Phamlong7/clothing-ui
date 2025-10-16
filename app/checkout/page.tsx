@@ -11,7 +11,7 @@ export default function CheckoutPage() {
   const { isAuthenticated } = useAuth();
   const { show } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"simulate" | "payos" | "vnpay">("simulate");
+  const [paymentMethod, setPaymentMethod] = useState<"simulate" | "stripe" | "vnpay">("simulate");
 
   if (!isAuthenticated) {
     return (
@@ -74,8 +74,13 @@ export default function CheckoutPage() {
             window.location.href = vnpUrl;
             return;
           }
+          // If no URL provided, still route to result page to check status
+          if (orderId) {
+            show("Checking payment status...", "success");
+            window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+            return;
+          }
           show("Redirecting to payment...", "success");
-          console.log("Payment payload:", payment);
         } else {
           show("Payment created.", "success");
         }
@@ -104,7 +109,7 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     value="simulate"
                     checked={paymentMethod === "simulate"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "stripe" | "vnpay")}
                     className="w-4 h-4 text-purple-600"
                   />
                   <span className="text-white">Simulate Payment (Demo)</span>
@@ -113,12 +118,12 @@ export default function CheckoutPage() {
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="payos"
-                    checked={paymentMethod === "payos"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
+                    value="stripe"
+                    checked={paymentMethod === "stripe"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "stripe" | "vnpay")}
                     className="w-4 h-4 text-purple-600"
                   />
-                  <span className="text-white">PayOS Payment</span>
+                  <span className="text-white">Stripe Payment</span>
                 </label>
                 <label className="flex items-center space-x-3 cursor-pointer">
                   <input
@@ -126,7 +131,7 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     value="vnpay"
                     checked={paymentMethod === "vnpay"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "payos" | "vnpay")}
+                    onChange={(e) => setPaymentMethod(e.target.value as "simulate" | "stripe" | "vnpay")}
                     className="w-4 h-4 text-purple-600"
                   />
                   <span className="text-white">VNPAY Payment</span>
