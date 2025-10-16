@@ -61,6 +61,8 @@ export default function CheckoutPage() {
         }
       } else {
         const envelope = result as PaymentEnvelope | Order | Record<string, unknown>;
+        console.log("[Checkout] Full response from createOrder:", JSON.stringify(result, null, 2));
+        
         const extractPaymentSection = (value: unknown): unknown => {
           if (value && typeof value === "object") {
             const obj = value as Record<string, unknown>;
@@ -96,7 +98,10 @@ export default function CheckoutPage() {
         };
 
         const paymentSection = extractPaymentSection(envelope) ?? envelope;
+        console.log("[Checkout] Payment section extracted:", paymentSection);
+        
         const paymentUrlValue = extractUrl(paymentSection) ?? extractUrl(envelope);
+        console.log("[Checkout] Payment URL extracted:", paymentUrlValue);
         
         if (paymentUrlValue && orderId) {
           
@@ -112,13 +117,12 @@ export default function CheckoutPage() {
           }
 
         if (orderId) {
-          show("Checking payment status...", "success");
-          try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
+          console.warn("[Checkout] No payment URL found in response, backend may not support this payment method");
+          show(`Payment gateway not available for ${paymentMethod}. Please contact support.`, "error");
           return;
         }
 
-        show("Redirecting to payment...", "success");
+        show("Order creation failed - no order ID returned", "error");
       }
     } catch (error) {
       console.error("Failed to place order:", error);
