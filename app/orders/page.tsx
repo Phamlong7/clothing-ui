@@ -41,6 +41,7 @@ export default function OrdersPage() {
       setPayingId(orderId);
       const method = selectedMethods[orderId] ?? "simulate";
       
+      // For simulate payment, process directly
       if (method === "simulate") {
         await payOrder(orderId, { paymentMethod: "simulate" });
         show("Payment simulated successfully!", "success");
@@ -48,6 +49,15 @@ export default function OrdersPage() {
         return;
       }
       
+      // For VNPAY/Stripe, get payment URL and redirect
+      console.log(`[Orders] Processing ${method} payment for order: ${orderId}`);
+      
+      const result = await payOrder(orderId, { paymentMethod: method });
+      console.log("[Orders] Full response from payOrder:", JSON.stringify(result, null, 2));
+      
+      const envelope = result as PaymentEnvelope | Order | Record<string, unknown>;
+      
+      // Extract payment section (might be nested)
       const extractPaymentSection = (value: unknown): unknown => {
         if (value && typeof value === "object") {
           const obj = value as Record<string, unknown>;
@@ -57,6 +67,10 @@ export default function OrdersPage() {
         return undefined;
       };
       
+      const paymentSection = extractPaymentSection(envelope) ?? envelope;
+      console.log("[Orders] Payment section extracted:", paymentSection);
+      
+      // Extract URL from various possible field names
       const extractUrl = (source: unknown): string | undefined => {
         if (!source) return undefined;
         if (typeof source === "string") return source;
@@ -82,24 +96,31 @@ export default function OrdersPage() {
         return undefined;
       };
       
-      const result = await payOrder(orderId, { paymentMethod: method });
-      const envelope = result as PaymentEnvelope | Order | Record<string, unknown>;
-      const paymentSection = extractPaymentSection(envelope) ?? envelope;
       const paymentUrl = extractUrl(paymentSection) ?? extractUrl(envelope);
+      console.log("[Orders] Payment URL extracted:", paymentUrl);
       
       if (paymentUrl) {
+        // Save order ID to sessionStorage for payment-result page
+        try { 
+          sessionStorage.setItem("payment:lastOrderId", orderId);
+          sessionStorage.setItem("payment:redirectTime", Date.now().toString());
+        } catch {}
+        
         const gateway = method === "stripe" ? "Stripe" : "VNPAY";
         show(`Redirecting to ${gateway}...`, "success");
-        try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
+        
+        // Redirect to payment-pending page which will then redirect to payment gateway
         window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}&paymentMethod=${encodeURIComponent(method)}`;
         return;
       }
       
-      show("Payment processed", "success");
-      await loadOrders();
+      // If no payment URL found, show error
+      console.warn("[Orders] No payment URL found in response");
+      show(`Payment gateway not available for ${method}. Please contact support.`, "error");
+      
     } catch (e) {
-      console.error("Pay order failed", e);
-      show("Failed to process payment", "error");
+      console.error("[Orders] Pay order failed:", e);
+      show("Failed to process payment. Please try again.", "error");
     } finally {
       setPayingId(null);
     }
