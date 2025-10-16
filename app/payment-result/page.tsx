@@ -68,12 +68,25 @@ function PaymentResultContent() {
   }, []);
 
   const isPaid = status === "paid";
+  const isFailed = status === "failed" || status === "cancelled";
+  const isTimeout = status === "timeout";
   const isPending = status === "loading";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center p-6">
       <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center text-white max-w-xl w-full">
-        {isPending ? (
+        {isPaid ? (
+          <>
+            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+            <p className="text-white/80 mb-2">Your payment has been confirmed.</p>
+            {orderId && <p className="text-white/60 text-sm mb-6">Order #{orderId.slice(-8)}</p>}
+          </>
+        ) : isPending ? (
           <>
             <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center justify-center">
               <svg className="w-10 h-10 text-yellow-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +100,7 @@ function PaymentResultContent() {
               <span>Verifying payment...</span>
             </div>
           </>
-        ) : status === "failed" || status === "cancelled" ? (
+        ) : isFailed ? (
           <>
             <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center">
               <svg className="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +114,7 @@ function PaymentResultContent() {
               <p className="text-white/70 text-sm mb-6">Status: {order.status}</p>
             )}
           </>
-        ) : status === "timeout" ? (
+        ) : isTimeout ? (
           <>
             <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-orange-500/20 border border-orange-400/30 flex items-center justify-center">
               <svg className="w-10 h-10 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
