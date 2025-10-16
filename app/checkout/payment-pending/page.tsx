@@ -11,6 +11,7 @@ function PaymentPendingContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId") || "";
   const paymentUrl = searchParams.get("paymentUrl");
+  const paymentMethod = searchParams.get("paymentMethod") || "vnpay";
   
   const [status, setStatus] = useState<PaymentStatus | "polling" | "redirecting">("redirecting");
   const [order, setOrder] = useState<Order | null>(null);
@@ -95,17 +96,32 @@ function PaymentPendingContent() {
   }
 
   if (status === "redirecting") {
+    const gatewayName = paymentMethod === "stripe" ? "Stripe" : "VNPAY";
+    const gatewayColor = paymentMethod === "stripe" ? "purple" : "blue";
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center p-6">
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center text-white max-w-xl w-full">
-          <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
-            <svg className="w-10 h-10 text-blue-300 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`mx-auto mb-6 w-20 h-20 rounded-full bg-${gatewayColor}-500/20 border border-${gatewayColor}-400/30 flex items-center justify-center`}>
+            <svg className={`w-10 h-10 text-${gatewayColor}-300 animate-spin`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Redirecting to Payment Gateway</h1>
-          <p className="text-white/80 mb-2">Please wait while we redirect you to VNPAY...</p>
-          <p className="text-white/60 text-sm">Order #{orderId.slice(-8)}</p>
+          <h1 className="text-3xl font-bold mb-2">Redirecting to {gatewayName}</h1>
+          <p className="text-white/80 mb-2">Please wait while we redirect you to the payment gateway...</p>
+          <p className="text-white/60 text-sm mb-4">Order #{orderId.slice(-8)}</p>
+          {paymentMethod === "stripe" && (
+            <div className="text-white/70 text-sm bg-white/5 rounded-xl p-3 border border-white/10">
+              <p className="font-semibold mb-1">💳 Secure Payment with Stripe</p>
+              <p className="text-xs text-white/60">You&apos;ll be redirected to Stripe&apos;s secure checkout page</p>
+            </div>
+          )}
+          {paymentMethod === "vnpay" && (
+            <div className="text-white/70 text-sm bg-white/5 rounded-xl p-3 border border-white/10">
+              <p className="font-semibold mb-1">🏦 VNPAY Payment Gateway</p>
+              <p className="text-xs text-white/60">Redirecting to VNPAY for secure payment</p>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -82,15 +82,16 @@ export default function CheckoutPage() {
               sessionStorage.setItem("payment:redirectTime", Date.now().toString());
             } catch {}
             
-            show("Redirecting to VNPAY...", "success");
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(vnpUrl)}`;
+            const gateway = paymentMethod === "stripe" ? "Stripe" : "VNPAY";
+            show(`Redirecting to ${gateway}...`, "success");
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(vnpUrl)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
             return;
           }
           
           if (orderId) {
             show("Checking payment status...", "success");
             try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}`;
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
             return;
           }
           
