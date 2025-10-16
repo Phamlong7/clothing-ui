@@ -9,7 +9,15 @@ import Button from "@/components/ui/Button";
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const orderId = useMemo(() => searchParams.get("orderId") || searchParams.get("vnp_TxnRef") || "", [searchParams]);
+  const orderId = useMemo(() => {
+    const byQuery = searchParams.get("orderId") || searchParams.get("vnp_TxnRef");
+    if (byQuery) return byQuery;
+    try {
+      const cached = sessionStorage.getItem("payment:lastOrderId");
+      if (cached) return cached;
+    } catch {}
+    return "";
+  }, [searchParams]);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
