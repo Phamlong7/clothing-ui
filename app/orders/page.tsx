@@ -65,6 +65,8 @@ export default function OrdersPage() {
         const vnpUrl = getPaymentUrl(payment);
         if (vnpUrl) {
           show("Redirecting to VNPAY...", "success");
+          // Cache the current orderId argument
+          try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
           window.location.href = vnpUrl;
           return;
         }
@@ -76,16 +78,17 @@ export default function OrdersPage() {
           }
           return undefined;
         };
-        const orderId = getId(envelope.order) ?? getId(envelope);
-        if (orderId) {
+        const newOrderId = getId(envelope.order) ?? getId(envelope);
+        if (newOrderId) {
           show("Checking payment status...", "success");
-          window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+          window.location.href = `/payment-result?orderId=${encodeURIComponent(newOrderId)}`;
           return;
         }
         show("Redirecting to payment...", "success");
       } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
         // Navigate to result page to reflect updated status
+        try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
         window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
       } else {
         show("Payment successful", "success");

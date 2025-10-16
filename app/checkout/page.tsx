@@ -71,12 +71,16 @@ export default function CheckoutPage() {
           const vnpUrl = getPaymentUrl(payment);
           if (vnpUrl) {
             show("Redirecting to VNPAY...", "success");
+            if (orderId) {
+              try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
+            }
             window.location.href = vnpUrl;
             return;
           }
           // If no URL provided, still route to result page to check status
           if (orderId) {
             show("Checking payment status...", "success");
+            try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
             window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
             return;
           }
