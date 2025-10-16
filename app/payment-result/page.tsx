@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getOrder, Order } from "@/lib/api";
+import { waitForPayment, PaymentStatus } from "@/lib/utils";
+import { Order } from "@/lib/api";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 
-export default function PaymentResultPage() {
+function PaymentResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = useMemo(() => {
@@ -18,77 +19,115 @@ export default function PaymentResultPage() {
     } catch {}
     return "";
   }, [searchParams]);
+  
+  const [status, setStatus] = useState<PaymentStatus | "loading">("loading");
   const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pollingStarted, setPollingStarted] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      if (!orderId) {
-        setError("Missing orderId");
-        setLoading(false);
-        return;
-      }
-      try {
-        const o = await getOrder(orderId);
-        if (!cancelled) {
-          setOrder(o);
-        }
-      } catch {
-        if (!cancelled) setError("Failed to load order");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [orderId]);
-
-  // Polling while pending to auto-refresh status from IPN/Return
   useEffect(() => {
     if (!orderId) return;
-    if (!order || order.status !== "pending") return;
-    let attempts = 0;
-    const maxAttempts = 15; // ~30s if interval=2000ms
-    const interval = setInterval(async () => {
-      attempts += 1;
+    
+    const hasVnpayParams = searchParams.get("vnp_TxnRef") || 
+                          searchParams.get("vnp_ResponseCode") ||
+                          searchParams.get("vnp_TransactionStatus");
+    
+    if (hasVnpayParams) {
+      router.replace(`/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}`);
+      return;
+    }
+  }, [orderId, searchParams, router]);
+
+  useEffect(() => {
+    if (!orderId) {
+      setStatus("failed");
+      return;
+    }
+    if (pollingStarted) return;
+
+    setPollingStarted(true);
+    setStatus("loading");
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const startPolling = async () => {
       try {
-        const o = await getOrder(orderId);
-        setOrder(o);
-        if (o.status !== "pending") {
-          clearInterval(interval);
+        const result = await waitForPayment(orderId, abortController.signal, 20, 2000);
+        
+        if (!abortController.signal.aborted) {
+          setStatus(result.status);
+          setOrder(result.order);
         }
-      } catch {
-        // ignore transient errors during polling
-      } finally {
-        if (attempts >= maxAttempts) {
-          clearInterval(interval);
+      } catch (error) {
+        console.error("Polling error:", error);
+        if (!abortController.signal.aborted) {
+          setStatus("failed");
         }
       }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [orderId, order]);
+    };
 
-  const isPaid = order?.status === "paid";
-  const isPending = order?.status === "pending";
+    startPolling();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [orderId, pollingStarted]);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const isPaid = status === "paid";
+  const isPending = status === "loading";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center p-6">
       <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center text-white max-w-xl w-full">
-        {loading ? (
-          <div className="text-white/80 text-lg">Checking payment...</div>
-        ) : error ? (
+        {isPending ? (
+          <>
+            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center justify-center">
+              <svg className="w-10 h-10 text-yellow-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Checking Payment Status</h1>
+            <p className="text-white/80 mb-6">Please wait...</p>
+            <div className="flex items-center justify-center space-x-2 text-white/70 text-sm">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+              <span>Verifying payment...</span>
+            </div>
+          </>
+        ) : status === "failed" || status === "cancelled" ? (
           <>
             <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center">
               <svg className="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold mb-2">Payment Error</h1>
-            <p className="text-white/80 mb-6">{error}</p>
+            <h1 className="text-3xl font-bold mb-2">Payment Failed</h1>
+            <p className="text-white/80 mb-2">We couldn&apos;t process your payment.</p>
+            {orderId && <p className="text-white/60 text-sm mb-6">Order #{orderId.slice(-8)}</p>}
+            {order && (
+              <p className="text-white/70 text-sm mb-6">Status: {order.status}</p>
+            )}
+          </>
+        ) : status === "timeout" ? (
+          <>
+            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-orange-500/20 border border-orange-400/30 flex items-center justify-center">
+              <svg className="w-10 h-10 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Payment Status Timeout</h1>
+            <p className="text-white/80 mb-2">We&apos;re still waiting for payment confirmation.</p>
+            {orderId && <p className="text-white/60 text-sm mb-6">Order #{orderId.slice(-8)}</p>}
+            <p className="text-white/70 text-sm mb-6">
+              Your payment may still be processing. Please check your order status later.
+            </p>
           </>
         ) : isPaid ? (
           <>
@@ -97,30 +136,11 @@ export default function PaymentResultPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold mb-2">Payment Successful</h1>
-            <p className="text-white/80 mb-6">Order #{order?.id.slice(-8)} is paid.</p>
+            <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+            <p className="text-white/80 mb-2">Your payment has been confirmed.</p>
+            {orderId && <p className="text-white/60 text-sm mb-6">Order #{orderId.slice(-8)}</p>}
           </>
-        ) : isPending ? (
-          <>
-            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center justify-center">
-              <svg className="w-10 h-10 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold mb-2">Payment Pending</h1>
-            <p className="text-white/80 mb-6">{"We haven't received confirmation yet for order #"}{order?.id.slice(-8)}{"."}</p>
-          </>
-        ) : (
-          <>
-            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center">
-              <svg className="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold mb-2">Payment Failed</h1>
-            <p className="text-white/80 mb-6">Order status: {order?.status ?? "unknown"}</p>
-          </>
-        )}
+        ) : null}
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/orders">
@@ -131,13 +151,34 @@ export default function PaymentResultPage() {
               <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold">View This Order</Button>
             </Link>
           )}
-          {!loading && isPending && (
-            <Button onClick={() => router.refresh()} className="bg-white/10 text-white border border-white/30 hover:bg-white/20">Refresh</Button>
+          {status === "timeout" && (
+            <Button 
+              onClick={() => {
+                setPollingStarted(false);
+                setStatus("loading");
+              }} 
+              className="bg-white/10 text-white border border-white/30 hover:bg-white/20"
+            >
+              Check Again
+            </Button>
           )}
         </div>
       </div>
     </div>
   );
 }
+
+export default function PaymentResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-purple-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    }>
+      <PaymentResultContent />
+    </Suspense>
+  );
+}
+
 
 

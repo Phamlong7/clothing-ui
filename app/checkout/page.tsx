@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { createOrder, Order, PaymentEnvelope } from "@/lib/api";
+import { createOrder, payOrder, Order, PaymentEnvelope } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
@@ -33,32 +33,37 @@ export default function CheckoutPage() {
     setIsLoading(true);
     try {
       const result = await createOrder({ paymentMethod });
+      
       const extractOrderId = (res: unknown): string | undefined => {
         if (res && typeof res === "object") {
           const obj = res as Record<string, unknown>;
-          if (typeof obj.id === "string") return obj.id; // envelope id
+          
+          if (typeof obj.orderId === "string") return obj.orderId;
+          if (typeof obj.id === "string") return obj.id;
+          
           const nestedOrder = obj.order as unknown;
           if (nestedOrder && typeof nestedOrder === "object" && typeof (nestedOrder as { id?: unknown }).id === "string") {
             return (nestedOrder as { id: string }).id;
           }
-          if (typeof (res as { id?: unknown }).id === "string") return (res as { id: string }).id; // plain order
         }
         return undefined;
       };
+      
       const orderId = extractOrderId(result);
       
       if (paymentMethod === "simulate") {
-        show("Order placed successfully! Payment simulated.", "success");
         if (orderId) {
-          window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+          await payOrder(orderId, { paymentMethod: "simulate" });
+          show("Order placed and paid successfully!", "success");
+          window.location.href = `/orders/${encodeURIComponent(orderId)}`;
         } else {
-          window.location.href = "/checkout/success";
+          show("Order created but payment failed.", "error");
         }
       } else {
-        // PayOS or VNPAY should return an envelope with payment details
         const envelope = result as PaymentEnvelope | Order;
         const hasPayment = (val: unknown): val is PaymentEnvelope =>
           typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
+        
         if (hasPayment(envelope)) {
           const payment = envelope.payment as unknown;
           const getPaymentUrl = (p: unknown): string | undefined => {
@@ -68,25 +73,35 @@ export default function CheckoutPage() {
             }
             return undefined;
           };
+          
           const vnpUrl = getPaymentUrl(payment);
-          if (vnpUrl) {
+          
+          if (vnpUrl && orderId) {
+            try { 
+              sessionStorage.setItem("payment:lastOrderId", orderId); 
+              sessionStorage.setItem("payment:redirectTime", Date.now().toString());
+            } catch {}
+            
             show("Redirecting to VNPAY...", "success");
-            if (orderId) {
-              try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            }
-            window.location.href = vnpUrl;
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(vnpUrl)}`;
             return;
           }
-          // If no URL provided, still route to result page to check status
+          
           if (orderId) {
             show("Checking payment status...", "success");
             try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}`;
             return;
           }
+          
           show("Redirecting to payment...", "success");
         } else {
-          show("Payment created.", "success");
+          if (orderId) {
+            show("Order created. Checking payment status...", "success");
+            window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+          } else {
+            show("Payment created.", "success");
+          }
         }
       }
     } catch (error) {
