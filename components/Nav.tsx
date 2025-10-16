@@ -33,7 +33,7 @@ export default function Nav() {
   }, [refreshBadges]);
 
   return (
-    <nav className="sticky top-4 z-50 w-full">
+    <nav className="sticky top-0 z-50 w-full">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between rounded-3xl border border-white/20 bg-gradient-to-r from-white/30 via-white/20 to-white/30 backdrop-blur-2xl shadow-[inset_0_0_40px_rgba(255,255,255,0.35)]">
         <Link href="/" className="flex items-center space-x-2">
           <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-white/40">

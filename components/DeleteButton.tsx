@@ -19,9 +19,12 @@ export default function DeleteButton({ id, productName, className, disabled = fa
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Match Edit button sizing and rhythm (softened transitions)
-  const defaultClassName =
-    "flex-1 w-full !h-[56px] inline-flex items-center justify-center gap-2 border-2 border-red-400/30 text-red-200 hover:bg-red-500/15 backdrop-blur-sm font-bold !text-lg !px-8 !py-0 rounded-2xl transition-all duration-200 hover:border-red-400/50 shadow-lg hover:shadow-xl";
+  // Match Edit button sizing and rhythm with proper disabled state
+  const baseClassName = "flex-1 w-full !h-[56px] inline-flex items-center justify-center gap-2 border-2 backdrop-blur-sm font-bold !text-lg !px-8 !py-0 rounded-2xl transition-all duration-200 shadow-lg";
+  
+  const defaultClassName = disabled 
+    ? `${baseClassName} border-red-300/20 text-red-300/50 bg-red-500/5 cursor-not-allowed opacity-60`
+    : `${baseClassName} border-red-400/30 text-red-200 hover:bg-red-500/15 hover:border-red-400/50 hover:shadow-xl`;
   
   const handleDelete = async () => {
     setIsDeleting(true);
