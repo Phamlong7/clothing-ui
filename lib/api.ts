@@ -227,7 +227,7 @@ export async function getOrder(id: string): Promise<Order> {
 export type PaymentEnvelope = { id: string; order: Order; payment: unknown };
 export type CreateOrderResp = Order | PaymentEnvelope;
 
-export async function createOrder(payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<CreateOrderResp> {
+export async function createOrder(payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<CreateOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
     body: JSON.stringify(payload || {}),
@@ -237,7 +237,7 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "payo
 
 export type PayOrderResp = Order | PaymentEnvelope;
 
-export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "payos" | "vnpay" }): Promise<PayOrderResp> {
+export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<PayOrderResp> {
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(payload || {}) });
   return await handleResponse<PayOrderResp>(res, correlationId);
 }
