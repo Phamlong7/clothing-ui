@@ -53,7 +53,7 @@ export default function OrdersPage() {
         if (url) {
           show("Redirecting to VNPAY...", "success");
           try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(url)}`;
+          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(url)}&paymentMethod=vnpay`;
           return;
         }
       }
@@ -77,7 +77,7 @@ export default function OrdersPage() {
           if (paymentUrl) {
             show("Redirecting to Stripe...", "success");
             try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}`;
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}&paymentMethod=stripe`;
             return;
           }
         }

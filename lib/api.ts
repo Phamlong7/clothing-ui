@@ -228,7 +228,7 @@ export type CreateOrderResp = Order | PaymentEnvelope;
 
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<CreateOrderResp> {
   const body = payload?.paymentMethod
-    ? { paymentMethod: payload.paymentMethod }
+    ? { Provider: payload.paymentMethod }
     : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
@@ -241,13 +241,13 @@ export type PayOrderResp = Order | PaymentEnvelope;
 
 export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<PayOrderResp> {
   const body = payload?.paymentMethod
-    ? { paymentMethod: payload.paymentMethod }
+    ? { Provider: payload.paymentMethod }
     : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(body) });
   return await handleResponse<PayOrderResp>(res, correlationId);
 }
 
 export async function vnpayCreate(orderId: string): Promise<{ url: string }> {
-  const { res, correlationId } = await fetchJson(`${API}/api/VnPay/create/${orderId}`, { method: "POST" });
+  const { res, correlationId } = await fetchJson(`${API}/api/vnpay/create/${orderId}`, { method: "POST" });
   return await handleResponse<{ url: string }>(res, correlationId);
 }

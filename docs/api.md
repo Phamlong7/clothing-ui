@@ -5,7 +5,8 @@ Base URL: `/api`
 ## Frontend changes and quick guide
 
 - Payments now support only VNPAY and Stripe. PayOS was removed.
-- Create order: POST `/api/orders` with `paymentMethod` = `vnpay | stripe | simulate`.
+- Create order: POST `/api/orders` with `Provider` = `vnpay | stripe | simulate`.
+  - **Important**: Use field name `Provider` (capital P), not `paymentMethod`
   - Response includes `payment.url` (open in browser) for `vnpay` and `stripe`.
 - After redirect back to FE, fetch GET `/api/orders/{id}` and branch UI by `status`:
   - `paid` → show success; otherwise show failure/pending and allow retry.
@@ -118,13 +119,16 @@ Header: `Authorization: Bearer <token>`
 
 - POST `/api/orders`
   - Body:
-    - simulate: `{ }` or `{ "paymentMethod": "simulate" }` → creates order and returns it
-    - VNPAY: `{ "paymentMethod": "vnpay" }` → returns `{ id, order, payment: { url, debug_sign_data } }`
-    - Stripe: `{ "paymentMethod": "stripe" }` → returns `{ id, order, payment: { url } }`
+    - simulate: `{ "Provider": "simulate" }` → creates order and returns it
+    - VNPAY: `{ "Provider": "vnpay" }` → returns `{ id, order, payment: { url, debug_sign_data } }`
+    - Stripe: `{ "Provider": "stripe" }` → returns `{ id, order, payment: { url } }`
   - Responses: `201 Created`
+  - **Note**: Field name is `Provider` (capital P), not `paymentMethod`
 
-- POST `/api/orders/{id}/pay` (simulate)
-  - Response: `200 OK` Order with `status: "paid"`
+- POST `/api/orders/{id}/pay`
+  - Body: `{ "Provider": "simulate" | "stripe" | "vnpay" }`
+  - Response: `200 OK` Order with `status: "paid"` (simulate) or PaymentEnvelope with `payment.url` (stripe/vnpay)
+  - **Note**: Field name is `Provider` (capital P), not `paymentMethod`
 
 - DELETE `/api/orders/{id}`
   - Response: `200 OK { ok: true }`
@@ -152,17 +156,19 @@ OrderItem {
 ## Payments
 
 ### VNPAY
-- POST `/api/vnpay/create/{orderId}` → trả `url` thanh toán cho đơn hàng
-- GET `/api/vnpay/return` → xác thực chữ ký và cập nhật order
-- GET `/api/vnpay/ipn` → IPN do VNPAY gọi, xác thực và cập nhật order, trả `200 OK`
+- POST `/api/vnpay/create/{orderId}` → Returns `{ url: string }` payment URL for the order
+  - **Note**: Endpoint is lowercase `/api/vnpay/create/{orderId}`, not `/api/VnPay/create/{orderId}`
+- GET `/api/vnpay/return` → Validates signature, updates order status, and redirects to frontend
+- GET `/api/vnpay/ipn` → IPN callback from VNPAY, validates and updates order, returns `200 OK`
 
-Ghi chú quan trọng (theo tài liệu VNPAY):
-- `vnp_Amount` là VND đơn vị nhỏ nhất (×100). Hệ thống quy đổi USD→VND theo tỷ giá sống `exchangerate.host` (fallback cấu hình `VnPay:UsdToVndRate`).
-- `vnp_CreateDate` theo múi giờ GMT+7 định dạng `yyyyMMddHHmmss`.
-- Ký HMAC-SHA512 trên chuỗi query đã form-encode (space = '+') với khóa `VnPay:HashSecret`, sắp xếp key theo ASCII (Ordinal). Thêm `vnp_SecureHashType=HmacSHA512` vào URL.
-- Xác thực Return/IPN bằng cách lấy raw query trước khi decode, bỏ `vnp_SecureHash`/`vnp_SecureHashType`, ký lại chuỗi encode để so khớp.
-- Thành công khi: `vnp_ResponseCode == "00"` và `vnp_TransactionStatus == "00"` → cập nhật `status = "paid"`, ngược lại `failed`.
-  - Tài liệu tham khảo: [VNPAY Pay docs](https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html)
+Important notes (per VNPAY documentation):
+- `vnp_Amount` is in VND smallest unit (×100). System converts USD→VND using live rate from `exchangerate.host` (fallback to config `VnPay:UsdToVndRate`).
+- `vnp_CreateDate` uses GMT+7 timezone in format `yyyyMMddHHmmss`.
+- HMAC-SHA512 signature on form-encoded query string (space = '+') using key `VnPay:HashSecret`, sorted by ASCII (Ordinal). Adds `vnp_SecureHashType=HmacSHA512` to URL.
+- Validates Return/IPN by taking raw query before decode, removing `vnp_SecureHash`/`vnp_SecureHashType`, re-signing encoded string for comparison.
+- Success when: `vnp_ResponseCode == "00"` and `vnp_TransactionStatus == "00"` → updates `status = "paid"`, otherwise `failed`.
+- After validation, redirects to frontend: `{Frontend:BaseUrl}/payment-result?orderId={orderId}&vnp_ResponseCode={responseCode}`
+  - Reference: [VNPAY Pay docs](https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html)
 
 ### Stripe
 - Checkout Session is created server-side; client opens `payment.url`.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { waitForPayment, PaymentStatus } from "@/lib/utils";
 import { Order } from "@/lib/api";
 import Link from "next/link";
@@ -9,7 +9,6 @@ import Button from "@/components/ui/Button";
 
 function PaymentResultContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const orderId = useMemo(() => {
     const byQuery = searchParams.get("orderId") || searchParams.get("vnp_TxnRef");
     if (byQuery) return byQuery;
@@ -26,20 +25,6 @@ function PaymentResultContent() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!orderId) return;
-    
-    const vnpResponseCode = searchParams.get("vnp_ResponseCode");
-    
-    if (vnpResponseCode) {
-      if (vnpResponseCode === "00") {
-        return;
-      }
-      router.replace(`/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}`);
-      return;
-    }
-  }, [orderId, searchParams, router]);
-
-  useEffect(() => {
     if (!orderId) {
       setStatus("failed");
       return;
@@ -53,7 +38,7 @@ function PaymentResultContent() {
 
     const startPolling = async () => {
       try {
-        const result = await waitForPayment(orderId, abortController.signal, 20, 2000);
+        const result = await waitForPayment(orderId, abortController.signal, 60, 3000);
         
         if (!abortController.signal.aborted) {
           setStatus(result.status);
