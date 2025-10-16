@@ -28,11 +28,12 @@ function PaymentResultContent() {
   useEffect(() => {
     if (!orderId) return;
     
-    const hasVnpayParams = searchParams.get("vnp_TxnRef") || 
-                          searchParams.get("vnp_ResponseCode") ||
-                          searchParams.get("vnp_TransactionStatus");
+    const vnpResponseCode = searchParams.get("vnp_ResponseCode");
     
-    if (hasVnpayParams) {
+    if (vnpResponseCode) {
+      if (vnpResponseCode === "00") {
+        return;
+      }
       router.replace(`/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}`);
       return;
     }
