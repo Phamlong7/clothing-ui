@@ -40,59 +40,50 @@ export default function OrdersPage() {
     try {
       setPayingId(orderId);
       const method = selectedMethods[orderId] ?? "simulate";
-      // Prefer dedicated VNPAY endpoint when chosen
+      
+      if (method === "simulate") {
+        await payOrder(orderId, { paymentMethod: "simulate" });
+        show("Payment simulated successfully!", "success");
+        await loadOrders();
+        return;
+      }
+      
       if (method === "vnpay") {
         const { url } = await vnpayCreate(orderId);
         if (url) {
           show("Redirecting to VNPAY...", "success");
-          window.location.href = url;
-          return;
-        }
-      }
-      const result = await payOrder(orderId, { paymentMethod: method });
-      const envelope = result as PaymentEnvelope | Order;
-      const hasPayment = (val: unknown): val is PaymentEnvelope =>
-        typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
-      if (hasPayment(envelope)) {
-        const payment = envelope.payment as unknown;
-        const getPaymentUrl = (p: unknown): string | undefined => {
-          if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
-            const u = (p as { url?: unknown }).url;
-            return typeof u === "string" ? u : undefined;
-          }
-          return undefined;
-        };
-        const vnpUrl = getPaymentUrl(payment);
-        if (vnpUrl) {
-          show("Redirecting to VNPAY...", "success");
-          // Cache the current orderId argument
           try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-          window.location.href = vnpUrl;
+          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(url)}`;
           return;
         }
-        // If payment provider returns no URL but we have order id, go to result page
-        const getId = (val: unknown): string | undefined => {
-          if (val && typeof val === "object") {
-            const obj = val as Record<string, unknown>;
-            if (typeof obj.id === "string") return obj.id;
-          }
-          return undefined;
-        };
-        const newOrderId = getId(envelope.order) ?? getId(envelope);
-        if (newOrderId) {
-          show("Checking payment status...", "success");
-          window.location.href = `/payment-result?orderId=${encodeURIComponent(newOrderId)}`;
-          return;
-        }
-        show("Redirecting to payment...", "success");
-      } else if (method === "simulate") {
-        show("Payment simulated successfully", "success");
-        // Navigate to result page to reflect updated status
-        try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-        window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
-      } else {
-        show("Payment successful", "success");
       }
+      
+      if (method === "stripe") {
+        const result = await payOrder(orderId, { paymentMethod: "stripe" });
+        const envelope = result as PaymentEnvelope | Order;
+        const hasPayment = (val: unknown): val is PaymentEnvelope =>
+          typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
+        
+        if (hasPayment(envelope)) {
+          const payment = envelope.payment as unknown;
+          const getPaymentUrl = (p: unknown): string | undefined => {
+            if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
+              const u = (p as { url?: unknown }).url;
+              return typeof u === "string" ? u : undefined;
+            }
+            return undefined;
+          };
+          const paymentUrl = getPaymentUrl(payment);
+          if (paymentUrl) {
+            show("Redirecting to Stripe...", "success");
+            try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}`;
+            return;
+          }
+        }
+      }
+      
+      show("Payment processed", "success");
       await loadOrders();
     } catch (e) {
       console.error("Pay order failed", e);
@@ -108,7 +99,7 @@ export default function OrdersPage() {
         return "bg-green-500/20 text-green-300 border-green-500/30";
       case "pending":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "cancelled":
+      case "failed":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";

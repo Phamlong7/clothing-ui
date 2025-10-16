@@ -49,9 +49,12 @@ export type LoginResp = { token: string };
 export type CartProduct = Product;
 export type CartItem = {
   id: string;
+  userId?: string;
+  productId?: string;
   product: CartProduct;
   quantity: number;
   lineTotal: number;
+  createdAt?: string;
 };
 export type Cart = { items: CartItem[]; total: number };
 
@@ -67,7 +70,7 @@ export type Order = {
   id: string;
   userId: string;
   totalAmount: number;
-  status: "pending" | "paid" | "cancelled";
+  status: "pending" | "paid" | "failed";
   createdAt: string;
   items: OrderItem[];
 };
@@ -91,8 +94,6 @@ export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
-
-// authHeaders no longer needed; fetchJson attaches Authorization automatically
 
 function buildProductsUrl() {
   try {
@@ -222,15 +223,12 @@ export async function getOrder(id: string): Promise<Order> {
   return await handleResponse<Order>(res, correlationId);
 }
 
-// Create/Pay responses can be either a direct Order (simulate)
-// or an envelope containing id, order, and payment payload (PayOS/VNPAY)
 export type PaymentEnvelope = { id: string; order: Order; payment: unknown };
 export type CreateOrderResp = Order | PaymentEnvelope;
 
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<CreateOrderResp> {
-  const provider = payload?.paymentMethod;
-  const body = provider
-    ? { paymentMethod: provider, provider, Provider: provider }
+  const body = payload?.paymentMethod
+    ? { paymentMethod: payload.paymentMethod }
     : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
@@ -242,15 +240,13 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "stri
 export type PayOrderResp = Order | PaymentEnvelope;
 
 export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<PayOrderResp> {
-  const provider = payload?.paymentMethod;
-  const body = provider
-    ? { paymentMethod: provider, provider, Provider: provider }
+  const body = payload?.paymentMethod
+    ? { paymentMethod: payload.paymentMethod }
     : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(body) });
   return await handleResponse<PayOrderResp>(res, correlationId);
 }
 
-// Per docs: POST /api/vnpay/create/{orderId} -> { url }
 export async function vnpayCreate(orderId: string): Promise<{ url: string }> {
   const { res, correlationId } = await fetchJson(`${API}/api/VnPay/create/${orderId}`, { method: "POST" });
   return await handleResponse<{ url: string }>(res, correlationId);

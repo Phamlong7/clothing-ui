@@ -46,7 +46,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         return "bg-green-500/20 text-green-300 border-green-500/30";
       case "pending":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "cancelled":
+      case "failed":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
@@ -200,18 +200,6 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               </div>
             </div>
           </div>
-          
-          {order.status === "pending" && (
-            <div className="mt-8 pt-6 border-t border-white/30">
-              <div className="text-center">
-                <Button 
-                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold px-8 py-3 text-lg"
-                >
-                  Pay Now
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
