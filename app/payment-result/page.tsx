@@ -9,7 +9,7 @@ import Button from "@/components/ui/Button";
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const orderId = useMemo(() => searchParams.get("orderId") || "", [searchParams]);
+  const orderId = useMemo(() => searchParams.get("orderId") || searchParams.get("vnp_TxnRef") || "", [searchParams]);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

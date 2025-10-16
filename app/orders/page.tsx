@@ -68,8 +68,21 @@ export default function OrdersPage() {
           window.location.href = vnpUrl;
           return;
         }
+        // If payment provider returns no URL but we have order id, go to result page
+        const getId = (val: unknown): string | undefined => {
+          if (val && typeof val === "object") {
+            const obj = val as Record<string, unknown>;
+            if (typeof obj.id === "string") return obj.id;
+          }
+          return undefined;
+        };
+        const orderId = getId(envelope.order) ?? getId(envelope);
+        if (orderId) {
+          show("Checking payment status...", "success");
+          window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+          return;
+        }
         show("Redirecting to payment...", "success");
-        console.log("Payment payload:", payment);
       } else if (method === "simulate") {
         show("Payment simulated successfully", "success");
       } else {

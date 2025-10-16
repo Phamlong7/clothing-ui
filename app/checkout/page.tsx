@@ -33,10 +33,27 @@ export default function CheckoutPage() {
     setIsLoading(true);
     try {
       const result = await createOrder({ paymentMethod });
+      const extractOrderId = (res: unknown): string | undefined => {
+        if (res && typeof res === "object") {
+          const obj = res as Record<string, unknown>;
+          if (typeof obj.id === "string") return obj.id; // envelope id
+          const nestedOrder = obj.order as unknown;
+          if (nestedOrder && typeof nestedOrder === "object" && typeof (nestedOrder as { id?: unknown }).id === "string") {
+            return (nestedOrder as { id: string }).id;
+          }
+          if (typeof (res as { id?: unknown }).id === "string") return (res as { id: string }).id; // plain order
+        }
+        return undefined;
+      };
+      const orderId = extractOrderId(result);
       
       if (paymentMethod === "simulate") {
         show("Order placed successfully! Payment simulated.", "success");
-        window.location.href = "/checkout/success";
+        if (orderId) {
+          window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
+        } else {
+          window.location.href = "/checkout/success";
+        }
       } else {
         // PayOS or VNPAY should return an envelope with payment details
         const envelope = result as PaymentEnvelope | Order;
