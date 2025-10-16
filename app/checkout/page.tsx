@@ -60,23 +60,46 @@ export default function CheckoutPage() {
           show("Order created but payment failed.", "error");
         }
       } else {
-        const envelope = result as PaymentEnvelope | Order;
-        const hasPayment = (val: unknown): val is PaymentEnvelope =>
-          typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
-        
-        if (hasPayment(envelope)) {
-          const payment = envelope.payment as unknown;
-          const getPaymentUrl = (p: unknown): string | undefined => {
-            if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
-              const u = (p as { url?: unknown }).url;
-              return typeof u === "string" ? u : undefined;
+        const envelope = result as PaymentEnvelope | Order | Record<string, unknown>;
+        const extractPaymentSection = (value: unknown): unknown => {
+          if (value && typeof value === "object") {
+            const obj = value as Record<string, unknown>;
+            if ("payment" in obj) return obj.payment;
+            if ("Payment" in obj) return obj.Payment;
+          }
+          return undefined;
+        };
+
+        const extractUrl = (source: unknown): string | undefined => {
+          if (!source) return undefined;
+          if (typeof source === "string") return source;
+          if (typeof source === "object") {
+            const obj = source as Record<string, unknown>;
+            const keys = [
+              "url",
+              "Url",
+              "URL",
+              "paymentUrl",
+              "paymentURL",
+              "PaymentUrl",
+              "redirectUrl",
+              "RedirectUrl",
+              "checkoutUrl",
+              "CheckoutUrl",
+            ];
+            for (const key of keys) {
+              const val = obj[key];
+              if (typeof val === "string" && val.length > 0) return val;
             }
-            return undefined;
-          };
+          }
+          return undefined;
+        };
+
+        const paymentSection = extractPaymentSection(envelope) ?? envelope;
+        const paymentUrlValue = extractUrl(paymentSection) ?? extractUrl(envelope);
+        
+        if (paymentUrlValue && orderId) {
           
-          const vnpUrl = getPaymentUrl(payment);
-          
-          if (vnpUrl && orderId) {
             try { 
               sessionStorage.setItem("payment:lastOrderId", orderId); 
               sessionStorage.setItem("payment:redirectTime", Date.now().toString());
@@ -84,26 +107,18 @@ export default function CheckoutPage() {
             
             const gateway = paymentMethod === "stripe" ? "Stripe" : "VNPAY";
             show(`Redirecting to ${gateway}...`, "success");
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(vnpUrl)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
+            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrlValue)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
             return;
           }
-          
-          if (orderId) {
-            show("Checking payment status...", "success");
-            try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
-            return;
-          }
-          
-          show("Redirecting to payment...", "success");
-        } else {
-          if (orderId) {
-            show("Order created. Checking payment status...", "success");
-            window.location.href = `/payment-result?orderId=${encodeURIComponent(orderId)}`;
-          } else {
-            show("Payment created.", "success");
-          }
+
+        if (orderId) {
+          show("Checking payment status...", "success");
+          try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
+          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentMethod=${encodeURIComponent(paymentMethod)}`;
+          return;
         }
+
+        show("Redirecting to payment...", "success");
       }
     } catch (error) {
       console.error("Failed to place order:", error);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { listOrders, payOrder, Order, vnpayCreate, PaymentEnvelope } from "@/lib/api";
+import { listOrders, payOrder, Order, PaymentEnvelope } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
 import Link from "next/link";
@@ -48,39 +48,51 @@ export default function OrdersPage() {
         return;
       }
       
-      if (method === "vnpay") {
-        const { url } = await vnpayCreate(orderId);
-        if (url) {
-          show("Redirecting to VNPAY...", "success");
-          try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-          window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(url)}&paymentMethod=vnpay`;
-          return;
+      const extractPaymentSection = (value: unknown): unknown => {
+        if (value && typeof value === "object") {
+          const obj = value as Record<string, unknown>;
+          if ("payment" in obj) return obj.payment;
+          if ("Payment" in obj) return obj.Payment;
         }
-      }
+        return undefined;
+      };
       
-      if (method === "stripe") {
-        const result = await payOrder(orderId, { paymentMethod: "stripe" });
-        const envelope = result as PaymentEnvelope | Order;
-        const hasPayment = (val: unknown): val is PaymentEnvelope =>
-          typeof val === "object" && val !== null && "payment" in (val as Record<string, unknown>);
-        
-        if (hasPayment(envelope)) {
-          const payment = envelope.payment as unknown;
-          const getPaymentUrl = (p: unknown): string | undefined => {
-            if (p && typeof p === "object" && "url" in (p as Record<string, unknown>)) {
-              const u = (p as { url?: unknown }).url;
-              return typeof u === "string" ? u : undefined;
-            }
-            return undefined;
-          };
-          const paymentUrl = getPaymentUrl(payment);
-          if (paymentUrl) {
-            show("Redirecting to Stripe...", "success");
-            try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
-            window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}&paymentMethod=stripe`;
-            return;
+      const extractUrl = (source: unknown): string | undefined => {
+        if (!source) return undefined;
+        if (typeof source === "string") return source;
+        if (typeof source === "object") {
+          const obj = source as Record<string, unknown>;
+          const keys = [
+            "url",
+            "Url",
+            "URL",
+            "paymentUrl",
+            "paymentURL",
+            "PaymentUrl",
+            "redirectUrl",
+            "RedirectUrl",
+            "checkoutUrl",
+            "CheckoutUrl",
+          ];
+          for (const key of keys) {
+            const val = obj[key];
+            if (typeof val === "string" && val.length > 0) return val;
           }
         }
+        return undefined;
+      };
+      
+      const result = await payOrder(orderId, { paymentMethod: method });
+      const envelope = result as PaymentEnvelope | Order | Record<string, unknown>;
+      const paymentSection = extractPaymentSection(envelope) ?? envelope;
+      const paymentUrl = extractUrl(paymentSection) ?? extractUrl(envelope);
+      
+      if (paymentUrl) {
+        const gateway = method === "stripe" ? "Stripe" : "VNPAY";
+        show(`Redirecting to ${gateway}...`, "success");
+        try { sessionStorage.setItem("payment:lastOrderId", orderId); } catch {}
+        window.location.href = `/checkout/payment-pending?orderId=${encodeURIComponent(orderId)}&paymentUrl=${encodeURIComponent(paymentUrl)}&paymentMethod=${encodeURIComponent(method)}`;
+        return;
       }
       
       show("Payment processed", "success");

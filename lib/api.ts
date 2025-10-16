@@ -226,10 +226,20 @@ export async function getOrder(id: string): Promise<Order> {
 export type PaymentEnvelope = { id: string; order: Order; payment: unknown };
 export type CreateOrderResp = Order | PaymentEnvelope;
 
+const providerMap: Record<"simulate" | "stripe" | "vnpay", string> = {
+  simulate: "Simulate",
+  stripe: "Stripe",
+  vnpay: "VnPay",
+};
+
+function mapProvider(method?: "simulate" | "stripe" | "vnpay") {
+  if (!method) return undefined;
+  return providerMap[method];
+}
+
 export async function createOrder(payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<CreateOrderResp> {
-  const body = payload?.paymentMethod
-    ? { Provider: payload.paymentMethod }
-    : {};
+  const provider = mapProvider(payload?.paymentMethod);
+  const body = provider ? { Provider: provider } : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders`, {
     method: "POST",
     body: JSON.stringify(body),
@@ -240,14 +250,33 @@ export async function createOrder(payload?: { paymentMethod?: "simulate" | "stri
 export type PayOrderResp = Order | PaymentEnvelope;
 
 export async function payOrder(id: string, payload?: { paymentMethod?: "simulate" | "stripe" | "vnpay" }): Promise<PayOrderResp> {
-  const body = payload?.paymentMethod
-    ? { Provider: payload.paymentMethod }
-    : {};
+  const provider = mapProvider(payload?.paymentMethod);
+  const body = provider ? { Provider: provider } : {};
   const { res, correlationId } = await fetchJson(`${API}/api/Orders/${id}/pay`, { method: "POST", body: JSON.stringify(body) });
   return await handleResponse<PayOrderResp>(res, correlationId);
 }
 
 export async function vnpayCreate(orderId: string): Promise<{ url: string }> {
-  const { res, correlationId } = await fetchJson(`${API}/api/vnpay/create/${orderId}`, { method: "POST" });
-  return await handleResponse<{ url: string }>(res, correlationId);
+  const candidatePaths = [
+    `${API}/api/vnpay/create/${orderId}`,
+    `${API}/api/VnPay/create/${orderId}`,
+    `${API}/api/Vnpay/create/${orderId}`,
+  ];
+
+  let lastNotFound: unknown;
+
+  for (const path of candidatePaths) {
+    try {
+      const { res, correlationId } = await fetchJson(path, { method: "POST" });
+      return await handleResponse<{ url: string }>(res, correlationId);
+    } catch (error) {
+      if (error && typeof error === "object" && "kind" in error && (error as { kind: string }).kind === "not_found") {
+        lastNotFound = error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastNotFound ?? new Error("VNPAY create endpoint not found");
 }
