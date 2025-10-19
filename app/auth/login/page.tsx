@@ -6,12 +6,14 @@ import { useAuth } from "@/components/AuthProvider";
 import { login } from "@/lib/api";
 import type { HttpError } from "@/lib/http";
 import { useToast } from "@/components/ToastProvider";
+import ErrorAlert from "@/components/ErrorAlert";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login: setAuth } = useAuth();
   const { show } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,6 +22,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors([]); // Clear previous errors
 
     try {
       const { token } = await login(formData);
@@ -27,24 +30,46 @@ export default function LoginPage() {
       show("Login successful!", "success");
       router.push("/");
     } catch (error) {
+      const errorMessages: string[] = [];
+
       if (typeof error === "object" && error !== null && "kind" in error) {
         const err = error as HttpError;
+
+        // Handle validation errors (400 Bad Request)
         if (err.kind === "validation" && err.problem?.errors) {
-          const first = Object.values(err.problem.errors)[0]?.[0];
-          show(first || "Validation error", "error");
-          return;
+          // Flatten errors from Record<string, string[]>
+          const errorObj = err.problem.errors as Record<string, string[]>;
+          for (const field in errorObj) {
+            const fieldErrors = errorObj[field];
+            if (Array.isArray(fieldErrors)) {
+              errorMessages.push(...fieldErrors);
+            }
+          }
         }
-        if (err.kind === "unauthorized") {
-          show("Invalid email or password", "error");
-          return;
+        // Handle authentication errors (401 Unauthorized)
+        else if (err.kind === "unauthorized") {
+          errorMessages.push("Invalid email or password");
         }
-        if (err.kind === "problem" || err.kind === "unknown") {
-          const cid = err.correlationId ? ` (CID: ${err.correlationId})` : "";
-          show(`Login failed. Please try again.${cid}`, "error");
-          return;
+        // Handle other server errors
+        else if (err.kind === "problem" || err.kind === "unknown") {
+          errorMessages.push("Login failed. Please try again.");
+          if (err.correlationId) {
+            errorMessages.push(`Error ID: ${err.correlationId}`);
+          }
         }
       }
-      show("Login failed. Please try again.", "error");
+
+      // Fallback error
+      if (errorMessages.length === 0) {
+        errorMessages.push("Login failed. Please try again.");
+      }
+
+      setErrors(errorMessages);
+      
+      // Show first error in toast for quick notification
+      if (errorMessages.length > 0) {
+        show(errorMessages[0], "error");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +80,8 @@ export default function LoginPage() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+    // Clear errors when user starts typing
+    setErrors([]);
   };
 
   return (
@@ -65,6 +92,15 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-white/70">Sign in to your account</p>
           </div>
+
+          {/* Error Alert */}
+          {errors.length > 0 && (
+            <ErrorAlert
+              errors={errors}
+              title="Login Failed"
+              onClose={() => setErrors([])}
+            />
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
